@@ -1,1185 +1,920 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#1e3a5f" />
-  <title>Criar eventos para o calendário</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --gold: #d4a853;
-      --cream: #fefce8;
-      --muted: #94a3b8;
-      --ok: #22c55e;
-      --bad: #ef4444;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: radial-gradient(ellipse 100% 80% at 50% -20%, #1e3a5f 0%, var(--bg) 50%);
-      font-family: "Source Sans 3", sans-serif;
-      color: var(--cream);
-      padding: 1rem;
-      padding-bottom: 2rem;
-    }
-    h1 {
-      font-family: "Fraunces", Georgia, serif;
-      font-weight: 700;
-      font-size: clamp(1.35rem, 4vw, 1.85rem);
-      text-align: center;
-      margin: 0 0 0.35rem;
-      color: var(--gold);
-    }
-    .sub {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.95rem;
-      max-width: 36rem;
-      margin: 0 auto 1.25rem;
-      line-height: 1.45;
-    }
-    .panel {
-      max-width: 520px;
-      margin: 0 auto;
-      background: var(--card);
-      border-radius: 16px;
-      padding: 1.25rem;
-      border: 1px solid rgba(212, 168, 83, 0.25);
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-    }
-    .panel h2 {
-      font-family: "Fraunces", serif;
-      font-size: 1.05rem;
-      color: var(--gold);
-      margin: 0 0 0.75rem;
-      font-weight: 600;
-    }
-    label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
-    .field { margin-bottom: 0.85rem; }
-    input[type="text"],
-    input[type="date"],
-    input[type="time"],
-    textarea {
-      width: 100%;
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 0.65rem 0.75rem;
-      border-radius: 10px;
-      border: 2px solid rgba(148, 163, 184, 0.35);
-      background: rgba(15, 23, 42, 0.6);
-      color: var(--cream);
-    }
-    textarea { min-height: 4rem; resize: vertical; }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-    .row2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-    }
-    @media (max-width: 420px) {
-      .row2 { grid-template-columns: 1fr; }
-    }
-    .check {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    .check input { width: 1.1rem; height: 1.1rem; accent-color: var(--gold); }
-    .btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.25rem;
-    }
-    button {
-      font-family: inherit;
-      font-size: 1rem;
-      font-weight: 600;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-    }
-    .btn-primary {
-      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
-      color: #0f172a;
-      box-shadow: 0 4px 0 #92400e;
-    }
-    .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #92400e; }
-    .btn-secondary {
-      background: rgba(148, 163, 184, 0.2);
-      color: var(--cream);
-      border: 2px solid rgba(148, 163, 184, 0.35);
-    }
-    .btn-ok {
-      background: linear-gradient(180deg, #4ade80 0%, #15803d 100%);
-      color: #0f172a;
-      box-shadow: 0 4px 0 #166534;
-    }
-    .btn-ok:active { transform: translateY(2px); }
-    .hint {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 0.75rem;
-      line-height: 1.45;
-    }
-    .event-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .event-list li {
-      background: rgba(15, 23, 42, 0.55);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 12px;
-      padding: 0.75rem 0.85rem;
-      margin-bottom: 0.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-    .event-list li strong { display: block; color: var(--cream); font-size: 1rem; }
-    .event-list li span { font-size: 0.88rem; color: var(--muted); }
-    .event-actions { display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
-    .event-actions button {
-      padding: 0.35rem 0.55rem;
-      font-size: 0.82rem;
-      white-space: nowrap;
-    }
-    .btn-google-row {
-      background: rgba(59, 130, 246, 0.25);
-      color: #93c5fd;
-      border: 1px solid rgba(59, 130, 246, 0.45);
-    }
-    .btn-remove {
-      background: rgba(239, 68, 68, 0.2);
-      color: #fca5a5;
-      border: 1px solid rgba(239, 68, 68, 0.4);
-    }
-    .empty {
-      color: var(--muted);
-      font-size: 0.92rem;
-      font-style: italic;
-      margin: 0;
-    }
-    .err {
-      color: #fca5a5;
-      font-size: 0.88rem;
-      margin-top: 0.5rem;
-    }
-    .toast {
-      position: fixed;
-      bottom: 1.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--card);
-      border: 1px solid rgba(212, 168, 83, 0.5);
-      padding: 0.75rem 1.1rem;
-      border-radius: 12px;
-      z-index: 9999;
-      max-width: min(92vw, 26rem);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-      font-size: 0.92rem;
-      text-align: center;
-    }
-    .oauth-blocked {
-      background: rgba(127, 29, 29, 0.35);
-      border: 1px solid rgba(248, 113, 113, 0.45);
-      border-radius: 12px;
-      padding: 0.85rem 1rem;
-      margin-bottom: 1rem;
-      font-size: 0.88rem;
-      line-height: 1.45;
-      color: #fecaca;
-      max-width: 520px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .oauth-blocked strong { color: #fff; }
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-  </style>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
-<body>
-  <h1>Eventos para o calendário</h1>
-  <p class="sub">Preenche os dados e adiciona à lista. Ao add clica no <strong>Google</strong> que ira abrir o google calendario. <strong>Salva o evento</strong> para confirmar. Apos alguns minutos o evento estarar diposnivel no calendario!</p>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1e3a5f" />
+  <title>Criar eventos para o calendário</title>
 
-  <div class="oauth-blocked" id="oauthBlockedBanner" hidden>
-    <strong>Entrar com Google não funciona aqui.</strong> Estás a abrir a página pelo <strong>WhatsApp</strong> ou como ficheiro local — o Google exige um endereço <code>http://</code> ou <code>https://</code>. No PC, executa <code>SERVIR_PARA_TELEMOVEL.py</code> (ou outro servidor), abre no telemóvel <code>http://IP-DO-PC:porta/calendario-eventos.html</code> e adiciona esse URL nas origens OAuth na Google Cloud.
-  </div>
-
-  <div class="panel">
-    <h2>Novo evento</h2>
-    <div class="field">
-      <label for="titulo">Título</label>
-      <input type="text" id="titulo" placeholder="Ex.: Reunião de catequese" autocomplete="off" />
-    </div>
-    <div class="field">
-      <label for="data">Data</label>
-      <input type="date" id="data" />
-    </div>
-    <label class="check">
-      <input type="checkbox" id="diaInteiro" />
-      Dia inteiro (sem hora)
-    </label>
-    <div class="row2" id="horasRow">
-      <div class="field">
-        <label for="horaIni">Início</label>
-        <input type="time" id="horaIni" />
-      </div>
-      <div class="field">
-        <label for="horaFim">Fim</label>
-        <input type="time" id="horaFim" />
-      </div>
-    </div>
-    <div class="field">
-      <label for="local">Local (opcional)</label>
-      <input type="text" id="local" placeholder="Ex.: Paróquia" autocomplete="off" />
-    </div>
-    <div class="field">
-      <label for="notas">Notas (opcional)</label>
-      <textarea id="notas" placeholder="Detalhes…"></textarea>
-    </div>
-    <p class="err" id="formErr" hidden></p>
-    <div class="btns">
-      <button type="button" class="btn-primary" id="btnAdd">Adicionar à lista</button>
-    </div>
-  </div>
-
-  <div class="panel" style="margin-top:1rem;">
-    <h2>Lista (<span id="count">0</span>)</h2>
-    <p class="empty" id="emptyMsg">Ainda não há eventos. Adiciona pelo menos um.</p>
-    <ul class="event-list" id="lista" hidden></ul>
-    <div class="btns" style="margin-top:1rem;">
-      <button type="button" class="btn-ok" id="btnDownload" disabled>arquivo .ics</button>
-      <button type="button" class="btn-secondary" id="btnDownloadTxt" disabled>baixar texto</button>
-      <button type="button" class="btn-secondary" id="btnShareTxt" disabled>compartilhar texto</button>
-      <button type="button" class="btn-secondary" id="btnClear">Limpar lista</button>
-    </div>
-     <p class="hint">A <strong>opcao de baixar texto</strong> é o download simples do arquivo caso queira deixar salvo. O <strong>arquivo .ics</strong> é o arquivo que gera para o google calendario, nao precisa baixar se preferir</code>.</p>
-  </div>
-
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-
-  <script>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#1e3a5f" />
-  <title>Criar eventos para o calendário</title>
-  
   <link rel="manifest" href="manifest.json">
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('Service Worker registrado!', reg))
-          .catch(err => console.err('Erro ao registrar SW', err));
+          .catch(err => console.error('Falha ao registrar SW', err));
       });
     }
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --gold: #d4a853;
-      --cream: #fefce8;
-      --muted: #94a3b8;
-      --ok: #22c55e;
-      --bad: #ef4444;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: radial-gradient(ellipse 100% 80% at 50% -20%, #1e3a5f 0%, var(--bg) 50%);
-      font-family: "Source Sans 3", sans-serif;
-      color: var(--cream);
-      padding: 1rem;
-      padding-bottom: 2rem;
-    }
-    h1 {
-      font-family: "Fraunces", Georgia, serif;
-      font-weight: 700;
-      font-size: clamp(1.35rem, 4vw, 1.85rem);
-      text-align: center;
-      margin: 0 0 0.35rem;
-      color: var(--gold);
-    }
-    .sub {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.95rem;
-      max-width: 36rem;
-      margin: 0 auto 1.25rem;
-      line-height: 1.45;
-    }
-    .panel {
-      max-width: 520px;
-      margin: 0 auto;
-      background: var(--card);
-      border-radius: 16px;
-      padding: 1.25rem;
-      border: 1px solid rgba(212, 168, 83, 0.25);
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-    }
-    .panel h2 {
-      font-family: "Fraunces", serif;
-      font-size: 1.05rem;
-      color: var(--gold);
-      margin: 0 0 0.75rem;
-      font-weight: 600;
-    }
-    label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
-    .field { margin-bottom: 0.85rem; }
-    input[type="text"],
-    input[type="date"],
-    input[type="time"],
-    textarea {
-      width: 100%;
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 0.65rem 0.75rem;
-      border-radius: 10px;
-      border: 2px solid rgba(148, 163, 184, 0.35);
-      background: rgba(15, 23, 42, 0.6);
-      color: var(--cream);
-    }
-    textarea { min-height: 4rem; resize: vertical; }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-    .row2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-    }
-    @media (max-width: 420px) {
-      .row2 { grid-template-columns: 1fr; }
-    }
-    .check {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    .check input { width: 1.1rem; height: 1.1rem; accent-color: var(--gold); }
-    .btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.25rem;
-    }
-    button {
-      font-family: inherit;
-      font-size: 1rem;
-      font-weight: 600;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-    }
-    .btn-primary {
-      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
-      color: #0f172a;
-      box-shadow: 0 4px 0 #92400e;
-    }
-    .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #92400e; }
-    .btn-secondary {
-      background: rgba(148, 163, 184, 0.2);
-      color: var(--cream);
-      border: 2px solid rgba(148, 163, 184, 0.35);
-    }
-    .btn-ok {
-      background: linear-gradient(180deg, #4ade80 0%, #15803d 100%);
-      color: #0f172a;
-      box-shadow: 0 4px 0 #166534;
-    }
-    .btn-ok:active { transform: translateY(2px); }
-    .hint {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 0.75rem;
-      line-height: 1.45;
-    }
-    .event-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .event-list li {
-      background: rgba(15, 23, 42, 0.55);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 12px;
-      padding: 0.75rem 0.85rem;
-      margin-bottom: 0.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-    .event-list li strong { display: block; color: var(--cream); font-size: 1rem; }
-    .event-list li span { font-size: 0.88rem; color: var(--muted); }
-    .event-actions { display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
-    .event-actions button {
-      padding: 0.35rem 0.55rem;
-      font-size: 0.82rem;
-      white-space: nowrap;
-    }
-    .btn-google-row {
-      background: rgba(59, 130, 246, 0.25);
-      color: #93c5fd;
-      border: 1px solid rgba(59, 130, 246, 0.45);
-    }
-    .btn-remove {
-      background: rgba(239, 68, 68, 0.2);
-      color: #fca5a5;
-      border: 1px solid rgba(239, 68, 68, 0.4);
-    }
-    .empty {
-      color: var(--muted);
-      font-size: 0.92rem;
-      font-style: italic;
-      margin: 0;
-    }
-    .err {
-      color: #fca5a5;
-      font-size: 0.88rem;
-      margin-top: 0.5rem;
-    }
-    .toast {
-      position: fixed;
-      bottom: 1.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--card);
-      border: 1px solid rgba(212, 168, 83, 0.5);
-      padding: 0.75rem 1.1rem;
-      border-radius: 12px;
-      z-index: 9999;
-      max-width: min(92vw, 26rem);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-      font-size: 0.92rem;
-      text-align: center;
-    }
-  </style>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+ 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --gold: #d4a853;
+      --cream: #fefce8;
+      --muted: #94a3b8;
+      --ok: #22c55e;
+      --bad: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse 100% 80% at 50% -20%, #1e3a5f 0%, var(--bg) 50%);
+      font-family: "Source Sans 3", sans-serif;
+      color: var(--cream);
+      padding: 1rem;
+      padding-bottom: 2rem;
+    }
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(1.35rem, 4vw, 1.85rem);
+      text-align: center;
+      margin: 0 0 0.35rem;
+      color: var(--gold);
+    }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 36rem;
+      margin: 0 auto 1.25rem;
+      line-height: 1.45;
+    }
+    .panel {
+      max-width: 520px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.25rem;
+      border: 1px solid rgba(212, 168, 83, 0.25);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    }
+    .panel h2 {
+      font-family: "Fraunces", serif;
+      font-size: 1.05rem;
+      color: var(--gold);
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .field { margin-bottom: 0.85rem; }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 10px;
+      border: 2px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--cream);
+    }
+    textarea { min-height: 4rem; resize: vertical; }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 420px) {
+      .row2 { grid-template-columns: 1fr; }
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .check input { width: 1.1rem; height: 1.1rem; accent-color: var(--gold); }
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+    button {
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+      color: #0f172a;
+      box-shadow: 0 4px 0 #92400e;
+    }
+    .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #92400e; }
+    .btn-secondary {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--cream);
+      border: 2px solid rgba(148, 163, 184, 0.35);
+    }
+    .btn-ok {
+      background: linear-gradient(180deg, #4ade80 0%, #15803d 100%);
+      color: #0f172a;
+      box-shadow: 0 4px 0 #166534;
+    }
+    .btn-ok:active { transform: translateY(2px); }
+    .hint {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      line-height: 1.45;
+    }
+    .event-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .event-list li {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 12px;
+      padding: 0.75rem 0.85rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .event-list li strong { display: block; color: var(--cream); font-size: 1rem; }
+    .event-list li span { font-size: 0.88rem; color: var(--muted); }
+    .event-actions { display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
+    .event-actions button {
+      padding: 0.35rem 0.55rem;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .btn-google-row {
+      background: rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.45);
+    }
+    .btn-remove {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-style: italic;
+      margin: 0;
+    }
+    .err {
+      color: #fca5a5;
+      font-size: 0.88rem;
+      margin-top: 0.5rem;
+    }
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card);
+      border: 1px solid rgba(212, 168, 83, 0.5);
+      padding: 0.75rem 1.1rem;
+      border-radius: 12px;
+      z-index: 9999;
+      max-width: min(92vw, 26rem);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      font-size: 0.92rem;
+      text-align: center;
+    }
+    .oauth-blocked {
+      background: rgba(127, 29, 29, 0.35);
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #fecaca;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .oauth-blocked strong { color: #fff; }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <h1>Eventos para o calendário</h1>
-  <p class="sub">Preenche os dados e adiciona à lista. Ao add clica no <strong>Google</strong> que ira abrir o google calendario. <strong>Salva o evento</strong> para confirmar.</p>
+  <h1>Eventos para o calendário</h1>
+  <p class="sub">Preenche os dados e adiciona à lista. Ao add clica no <strong>Google</strong> que ira abrir o google calendario. <strong>Salva o evento</strong> para confirmar. Apos alguns minutos o evento estarar diposnivel no calendario!</p>
 
-  <div class="panel">
-    <h2>Novo evento</h2>
-    <div class="field">
-      <label for="titulo">Título</label>
-      <input type="text" id="titulo" placeholder="Ex.: Reunião de catequese" autocomplete="off" />
-    </div>
-    <div class="field">
-      <label for="data">Data</label>
-      <input type="date" id="data" />
-    </div>
-    <label class="check">
-      <input type="checkbox" id="diaInteiro" />
-      Dia inteiro (sem hora)
-    </label>
-    <div class="row2" id="horasRow">
-      <div class="field">
-        <label for="horaIni">Início</label>
-        <input type="time" id="horaIni" />
-      </div>
-      <div class="field">
-        <label for="horaFim">Fim</label>
-        <input type="time" id="horaFim" />
-      </div>
-    </div>
-    <div class="field">
-      <label for="local">Local (opcional)</label>
-      <input type="text" id="local" placeholder="Ex.: Paróquia" autocomplete="off" />
-    </div>
-    <div class="field">
-      <label for="notas">Notas (opcional)</label>
-      <textarea id="notas" placeholder="Detalhes…"></textarea>
-    </div>
-    <p class="err" id="formErr" hidden></p>
-    <div class="btns">
-      <button type="button" class="btn-primary" id="btnAdd">Adicionar à lista</button>
-    </div>
-  </div>
+  <div class="oauth-blocked" id="oauthBlockedBanner" hidden>
+    <strong>Entrar com Google não funciona aqui.</strong> Estás a abrir a página pelo <strong>WhatsApp</strong> ou como ficheiro local — o Google exige um endereço <code>http://</code> ou <code>https://</code>. No PC, executa <code>SERVIR_PARA_TELEMOVEL.py</code> (ou outro servidor), abre no telemóvel <code>http://IP-DO-PC:porta/calendario-eventos.html</code> e adiciona esse URL nas origens OAuth na Google Cloud.
+  </div>
 
-  <div class="panel" style="margin-top:1rem;">
-    <h2>Lista (<span id="count">0</span>)</h2>
-    <p class="empty" id="emptyMsg">Ainda não há eventos.</p>
-    <ul class="event-list" id="lista" hidden></ul>
-    <div class="btns" style="margin-top:1rem;">
-      <button type="button" class="btn-ok" id="btnDownload" disabled>arquivo .ics</button>
-      <button type="button" class="btn-secondary" id="btnDownloadTxt" disabled>baixar texto</button>
-      <button type="button" class="btn-secondary" id="btnShareTxt" disabled>compartilhar texto</button>
-      <button type="button" class="btn-secondary" id="btnClear">Limpar lista</button>
-    </div>
-  </div>
+  <div class="panel">
+    <h2>Novo evento</h2>
+    <div class="field">
+      <label for="titulo">Título</label>
+      <input type="text" id="titulo" placeholder="Ex.: Reunião de catequese" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="data">Data</label>
+      <input type="date" id="data" />
+    </div>
+    <label class="check">
+      <input type="checkbox" id="diaInteiro" />
+      Dia inteiro (sem hora)
+    </label>
+    <div class="row2" id="horasRow">
+      <div class="field">
+        <label for="horaIni">Início</label>
+        <input type="time" id="horaIni" />
+      </div>
+      <div class="field">
+        <label for="horaFim">Fim</label>
+        <input type="time" id="horaFim" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="local">Local (opcional)</label>
+      <input type="text" id="local" placeholder="Ex.: Paróquia" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="notas">Notas (opcional)</label>
+      <textarea id="notas" placeholder="Detalhes…"></textarea>
+    </div>
+    <p class="err" id="formErr" hidden></p>
+    <div class="btns">
+      <button type="button" class="btn-primary" id="btnAdd">Adicionar à lista</button>
+    </div>
+  </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div class="panel" style="margin-top:1rem;">
+    <h2>Lista (<span id="count">0</span>)</h2>
+    <p class="empty" id="emptyMsg">Ainda não há eventos. Adiciona pelo menos um.</p>
+    <ul class="event-list" id="lista" hidden></ul>
+    <div class="btns" style="margin-top:1rem;">
+      <button type="button" class="btn-ok" id="btnDownload" disabled>arquivo .ics</button>
+      <button type="button" class="btn-secondary" id="btnDownloadTxt" disabled>baixar texto</button>
+      <button type="button" class="btn-secondary" id="btnShareTxt" disabled>compartilhar texto</button>
+      <button type="button" class="btn-secondary" id="btnClear">Limpar lista</button>
+    </div>
+     <p class="hint">A <strong>opcao de baixar texto</strong> é o download simples do arquivo caso queira deixar salvo. O <strong>arquivo .ics</strong> é o arquivo que gera para o google calendario, nao precisa baixar se preferir</code>.</p>
+  </div>
 
-  <script>
-    // ... seu código JS original ...
-  </script>
-</body>
-</html>
-  const events = [];
-  const STORAGE_GOOGLE_ID = "gcal_client_id";
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  let tokenClient = null;
-  let toastTimer = null;
-  let pendingEventForGoogle = null;
+  <script>
+(function () {
+  const events = [];
+  const STORAGE_GOOGLE_ID = "gcal_client_id";
 
-  const el = (id) => document.getElementById(id);
-  const titulo = el("titulo");
-  const data = el("data");
-  const diaInteiro = el("diaInteiro");
-  const horasRow = el("horasRow");
-  const horaIni = el("horaIni");
-  const horaFim = el("horaFim");
-  const local = el("local");
-  const notas = el("notas");
-  const formErr = el("formErr");
-  const lista = el("lista");
-  const emptyMsg = el("emptyMsg");
-  const countEl = el("count");
-  const btnDownload = el("btnDownload");
-  const btnDownloadTxt = el("btnDownloadTxt");
-  const btnShareTxt = el("btnShareTxt");
-  const toastEl = el("toast");
-  const googleClientIdInput = el("googleClientId");
-  const oauthBlockedBanner = el("oauthBlockedBanner");
-  const btnGoogleSignIn = el("btnGoogleSignIn");
+  let tokenClient = null;
+  let toastTimer = null;
+  let pendingEventForGoogle = null;
 
-  function getPageOriginKind() {
-    const p = window.location.protocol || "";
-    const href = window.location.href || "";
-    if (p === "http:" || p === "https:") return "ok";
-    if (p === "file:") return "file";
-    if (p === "content:" || href.indexOf("content://") === 0) return "content";
-    return "other";
-  }
+  const el = (id) => document.getElementById(id);
+  const titulo = el("titulo");
+  const data = el("data");
+  const diaInteiro = el("diaInteiro");
+  const horasRow = el("horasRow");
+  const horaIni = el("horaIni");
+  const horaFim = el("horaFim");
+  const local = el("local");
+  const notas = el("notas");
+  const formErr = el("formErr");
+  const lista = el("lista");
+  const emptyMsg = el("emptyMsg");
+  const countEl = el("count");
+  const btnDownload = el("btnDownload");
+  const btnDownloadTxt = el("btnDownloadTxt");
+  const btnShareTxt = el("btnShareTxt");
+  const toastEl = el("toast");
+  const googleClientIdInput = el("googleClientId");
+  const oauthBlockedBanner = el("oauthBlockedBanner");
+  const btnGoogleSignIn = el("btnGoogleSignIn");
 
-  function canUseGoogleOAuth() {
-    return getPageOriginKind() === "ok";
-  }
+  function getPageOriginKind() {
+    const p = window.location.protocol || "";
+    const href = window.location.href || "";
+    if (p === "http:" || p === "https:") return "ok";
+    if (p === "file:") return "file";
+    if (p === "content:" || href.indexOf("content://") === 0) return "content";
+    return "other";
+  }
 
-  function refreshOAuthBanner() {
-    const ok = canUseGoogleOAuth();
-    if (oauthBlockedBanner) oauthBlockedBanner.hidden = ok;
-    if (btnGoogleSignIn) btnGoogleSignIn.disabled = !ok;
-  }
+  function canUseGoogleOAuth() {
+    return getPageOriginKind() === "ok";
+  }
 
-  function getGoogleClientId() {
-    try {
-      return (localStorage.getItem(STORAGE_GOOGLE_ID) || "").trim();
-    } catch (e) {
-      return "";
-    }
-  }
+  function refreshOAuthBanner() {
+    const ok = canUseGoogleOAuth();
+    if (oauthBlockedBanner) oauthBlockedBanner.hidden = ok;
+    if (btnGoogleSignIn) btnGoogleSignIn.disabled = !ok;
+  }
 
-  function getStoredGoogleToken() {
-    try {
-      const t = sessionStorage.getItem("gcal_access_token");
-      const exp = sessionStorage.getItem("gcal_expires_at");
-      if (!t || !exp) return null;
-      if (Date.now() > parseInt(exp, 10) - 60000) return null;
-      return t;
-    } catch (e) {
-      return null;
-    }
-  }
+  function getGoogleClientId() {
+    try {
+      return (localStorage.getItem(STORAGE_GOOGLE_ID) || "").trim();
+    } catch (e) {
+      return "";
+    }
+  }
 
-  function showToast(msg) {
-    if (!toastEl) {
-      alert(msg);
-      return;
-    }
-    toastEl.textContent = msg;
-    toastEl.hidden = false;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () {
-      toastEl.hidden = true;
-    }, 5500);
-  }
+  function getStoredGoogleToken() {
+    try {
+      const t = sessionStorage.getItem("gcal_access_token");
+      const exp = sessionStorage.getItem("gcal_expires_at");
+      if (!t || !exp) return null;
+      if (Date.now() > parseInt(exp, 10) - 60000) return null;
+      return t;
+    } catch (e) {
+      return null;
+    }
+  }
 
-  function updateGoogleStatus() {
-    const st = el("googleStatus");
-    if (!st) return;
-    if (!canUseGoogleOAuth()) {
-      st.textContent =
-        "Abre esta página por http:// ou https:// (servidor no PC). Pelo WhatsApp o login Google não funciona.";
-      st.style.color = "#fca5a5";
-      return;
-    }
-    const id = getGoogleClientId();
-    const tok = getStoredGoogleToken();
-    if (!id) {
-      st.textContent = "Cola o ID OAuth e clica em Guardar ID.";
-      st.style.color = "var(--muted)";
-      return;
-    }
-    st.style.color = "#86efac";
-    if (tok) {
-      st.textContent = "Ligado — o botão Google na lista pode gravar direto.";
-    } else {
-      st.textContent = "Clica «Entrar com Google» para autorizar.";
-    }
-  }
+  function showToast(msg) {
+    if (!toastEl) {
+      alert(msg);
+      return;
+    }
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.hidden = true;
+    }, 5500);
+  }
 
-  function endDateExclusiveYMD(isoDate) {
-    const next = new Date(isoDate + "T12:00:00");
-    next.setDate(next.getDate() + 1);
-    return (
-      next.getFullYear() +
-      "-" +
-      String(next.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(next.getDate()).padStart(2, "0")
-    );
-  }
+  function updateGoogleStatus() {
+    const st = el("googleStatus");
+    if (!st) return;
+    if (!canUseGoogleOAuth()) {
+      st.textContent =
+        "Abre esta página por http:// ou https:// (servidor no PC). Pelo WhatsApp o login Google não funciona.";
+      st.style.color = "#fca5a5";
+      return;
+    }
+    const id = getGoogleClientId();
+    const tok = getStoredGoogleToken();
+    if (!id) {
+      st.textContent = "Cola o ID OAuth e clica em Guardar ID.";
+      st.style.color = "var(--muted)";
+      return;
+    }
+    st.style.color = "#86efac";
+    if (tok) {
+      st.textContent = "Ligado — o botão Google na lista pode gravar direto.";
+    } else {
+      st.textContent = "Clica «Entrar com Google» para autorizar.";
+    }
+  }
 
-  async function createGoogleCalendarEventViaApi(ev) {
-    const token = getStoredGoogleToken();
-    if (!token) return { ok: false };
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Lisbon";
-    const reminders = {
-      useDefault: false,
-      overrides: [{ method: "popup", minutes: 0 }],
-    };
-    let body;
-    if (ev.diaInteiro) {
-      body = {
-        summary: ev.titulo,
-        reminders: reminders,
-        start: { date: ev.data },
-        end: { date: endDateExclusiveYMD(ev.data) },
-      };
-      if (ev.notas) body.description = ev.notas;
-      if (ev.local) body.location = ev.local;
-    } else {
-      body = {
-        summary: ev.titulo,
-        reminders: reminders,
-        start: { dateTime: ev.data + "T" + ev.horaIni + ":00", timeZone: tz },
-        end: { dateTime: ev.data + "T" + ev.horaFim + ":00", timeZone: tz },
-      };
-      if (ev.notas) body.description = ev.notas;
-      if (ev.local) body.location = ev.local;
-    }
-    const res = await fetch(
-      "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      }
-    );
-    if (res.status === 401) {
-      try {
-        sessionStorage.removeItem("gcal_access_token");
-        sessionStorage.removeItem("gcal_expires_at");
-      } catch (e) {}
-      updateGoogleStatus();
-      return { ok: false };
-    }
-    return { ok: res.ok };
-  }
+  function endDateExclusiveYMD(isoDate) {
+    const next = new Date(isoDate + "T12:00:00");
+    next.setDate(next.getDate() + 1);
+    return (
+      next.getFullYear() +
+      "-" +
+      String(next.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(next.getDate()).padStart(2, "0")
+    );
+  }
 
-  function initGoogleTokenClient() {
-    const id = getGoogleClientId();
-    if (!canUseGoogleOAuth() || !id || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      tokenClient = null;
-      return;
-    }
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: id,
-      scope: "https://www.googleapis.com/auth/calendar.events",
-      callback: function (resp) {
-        if (!resp.access_token) return;
-        try {
-          sessionStorage.setItem("gcal_access_token", resp.access_token);
-          sessionStorage.setItem(
-            "gcal_expires_at",
-            String(Date.now() + (resp.expires_in || 3600) * 1000)
-          );
-        } catch (e) {}
-        updateGoogleStatus();
-        const pending = pendingEventForGoogle;
-        pendingEventForGoogle = null;
-        if (pending) {
-          createGoogleCalendarEventViaApi(pending).then(function (r) {
-            if (r.ok) showToast("Guardado no Google Calendar.");
-            else {
-              showToast("Falhou. A abrir página do Google…");
-              openGoogleCalendarFallback(pending);
-            }
-          });
-        } else {
-          showToast("Sessão Google iniciada.");
-        }
-      },
-    });
-  }
+  async function createGoogleCalendarEventViaApi(ev) {
+    const token = getStoredGoogleToken();
+    if (!token) return { ok: false };
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Lisbon";
+    const reminders = {
+      useDefault: false,
+      overrides: [{ method: "popup", minutes: 0 }],
+    };
+    let body;
+    if (ev.diaInteiro) {
+      body = {
+        summary: ev.titulo,
+        reminders: reminders,
+        start: { date: ev.data },
+        end: { date: endDateExclusiveYMD(ev.data) },
+      };
+      if (ev.notas) body.description = ev.notas;
+      if (ev.local) body.location = ev.local;
+    } else {
+      body = {
+        summary: ev.titulo,
+        reminders: reminders,
+        start: { dateTime: ev.data + "T" + ev.horaIni + ":00", timeZone: tz },
+        end: { dateTime: ev.data + "T" + ev.horaFim + ":00", timeZone: tz },
+      };
+      if (ev.notas) body.description = ev.notas;
+      if (ev.local) body.location = ev.local;
+    }
+    const res = await fetch(
+      "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    if (res.status === 401) {
+      try {
+        sessionStorage.removeItem("gcal_access_token");
+        sessionStorage.removeItem("gcal_expires_at");
+      } catch (e) {}
+      updateGoogleStatus();
+      return { ok: false };
+    }
+    return { ok: res.ok };
+  }
 
-  if (googleClientIdInput) {
-    googleClientIdInput.value = getGoogleClientId();
-  }
-  refreshOAuthBanner();
+  function initGoogleTokenClient() {
+    const id = getGoogleClientId();
+    if (!canUseGoogleOAuth() || !id || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+      tokenClient = null;
+      return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: id,
+      scope: "https://www.googleapis.com/auth/calendar.events",
+      callback: function (resp) {
+        if (!resp.access_token) return;
+        try {
+          sessionStorage.setItem("gcal_access_token", resp.access_token);
+          sessionStorage.setItem(
+            "gcal_expires_at",
+            String(Date.now() + (resp.expires_in || 3600) * 1000)
+          );
+        } catch (e) {}
+        updateGoogleStatus();
+        const pending = pendingEventForGoogle;
+        pendingEventForGoogle = null;
+        if (pending) {
+          createGoogleCalendarEventViaApi(pending).then(function (r) {
+            if (r.ok) showToast("Guardado no Google Calendar.");
+            else {
+              showToast("Falhou. A abrir página do Google…");
+              openGoogleCalendarFallback(pending);
+            }
+          });
+        } else {
+          showToast("Sessão Google iniciada.");
+        }
+      },
+    });
+  }
 
-  function todayISODate() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return y + "-" + m + "-" + day;
-  }
-  data.value = todayISODate();
-  horaIni.value = "10:00";
-  horaFim.value = "11:00";
+  if (googleClientIdInput) {
+    googleClientIdInput.value = getGoogleClientId();
+  }
+  refreshOAuthBanner();
 
-  diaInteiro.addEventListener("change", function () {
-    horasRow.style.display = diaInteiro.checked ? "none" : "";
-  });
+  function todayISODate() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+  data.value = todayISODate();
+  horaIni.value = "10:00";
+  horaFim.value = "11:00";
 
-  function escapeICalText(s) {
-    if (s == null || s === "") return "";
-    return String(s)
-      .replace(/\\/g, "\\\\")
-      .replace(/;/g, "\\;")
-      .replace(/,/g, "\\,")
-      .replace(/\r\n/g, "\\n")
-      .replace(/\n/g, "\\n");
-  }
+  diaInteiro.addEventListener("change", function () {
+    horasRow.style.display = diaInteiro.checked ? "none" : "";
+  });
 
-  function dtstampUTC() {
-    return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  }
+  function escapeICalText(s) {
+    if (s == null || s === "") return "";
+    return String(s)
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r\n/g, "\\n")
+      .replace(/\n/g, "\\n");
+  }
 
-  function uid() {
-    return "evt-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10) + "@calendario-html";
-  }
+  function dtstampUTC() {
+    return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  }
 
-  function validate() {
-    formErr.hidden = true;
-    if (!titulo.value.trim()) {
-      formErr.textContent = "Indica um título.";
-      formErr.hidden = false;
-      return false;
-    }
-    if (!data.value) {
-      formErr.textContent = "Indica uma data.";
-      formErr.hidden = false;
-      return false;
-    }
-    if (!diaInteiro.checked) {
-      if (!horaIni.value || !horaFim.value) {
-        formErr.textContent = "Indica hora de início e de fim.";
-        formErr.hidden = false;
-        return false;
-      }
-      const [y, mo, d] = data.value.split("-").map(Number);
-      const [hi, mi] = horaIni.value.split(":").map(Number);
-      const [hf, mf] = horaFim.value.split(":").map(Number);
-      const t0 = new Date(y, mo - 1, d, hi, mi, 0, 0);
-      const t1 = new Date(y, mo - 1, d, hf, mf, 0, 0);
-      if (t1 <= t0) {
-        formErr.textContent = "A hora de fim tem de ser depois da hora de início.";
-        formErr.hidden = false;
-        return false;
-      }
-    }
-    return true;
-  }
+  function uid() {
+    return "evt-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10) + "@calendario-html";
+  }
 
-  function createEventFromForm() {
-    if (!validate()) return null;
-    return {
-      id: uid(),
-      titulo: titulo.value.trim(),
-      data: data.value,
-      diaInteiro: diaInteiro.checked,
-      horaIni: horaIni.value,
-      horaFim: horaFim.value,
-      local: local.value.trim(),
-      notas: notas.value.trim(),
-    };
-  }
+  function validate() {
+    formErr.hidden = true;
+    if (!titulo.value.trim()) {
+      formErr.textContent = "Indica um título.";
+      formErr.hidden = false;
+      return false;
+    }
+    if (!data.value) {
+      formErr.textContent = "Indica uma data.";
+      formErr.hidden = false;
+      return false;
+    }
+    if (!diaInteiro.checked) {
+      if (!horaIni.value || !horaFim.value) {
+        formErr.textContent = "Indica hora de início e de fim.";
+        formErr.hidden = false;
+        return false;
+      }
+      const [y, mo, d] = data.value.split("-").map(Number);
+      const [hi, mi] = horaIni.value.split(":").map(Number);
+      const [hf, mf] = horaFim.value.split(":").map(Number);
+      const t0 = new Date(y, mo - 1, d, hi, mi, 0, 0);
+      const t1 = new Date(y, mo - 1, d, hf, mf, 0, 0);
+      if (t1 <= t0) {
+        formErr.textContent = "A hora de fim tem de ser depois da hora de início.";
+        formErr.hidden = false;
+        return false;
+      }
+    }
+    return true;
+  }
 
-  function clearTitleNotes() {
-    titulo.value = "";
-    notas.value = "";
-  }
+  function createEventFromForm() {
+    if (!validate()) return null;
+    return {
+      id: uid(),
+      titulo: titulo.value.trim(),
+      data: data.value,
+      diaInteiro: diaInteiro.checked,
+      horaIni: horaIni.value,
+      horaFim: horaFim.value,
+      local: local.value.trim(),
+      notas: notas.value.trim(),
+    };
+  }
 
-  function googleCalendarUrl(ev) {
-    const text = encodeURIComponent(ev.titulo);
-    const details = encodeURIComponent(ev.notas || "");
-    const location = encodeURIComponent(ev.local || "");
-    let dates;
-    if (ev.diaInteiro) {
-      const ds = ev.data.replace(/-/g, "");
-      const next = new Date(ev.data + "T12:00:00");
-      next.setDate(next.getDate() + 1);
-      const de =
-        next.getFullYear() +
-        String(next.getMonth() + 1).padStart(2, "0") +
-        String(next.getDate()).padStart(2, "0");
-      dates = ds + "/" + de;
-    } else {
-      const d = ev.data.replace(/-/g, "");
-      const hi = ev.horaIni.replace(":", "") + "00";
-      const hf = ev.horaFim.replace(":", "") + "00";
-      dates = d + "T" + hi + "/" + d + "T" + hf;
-    }
-    return (
-      "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
-      text +
-      "&dates=" +
-      dates +
-      "&details=" +
-      details +
-      "&location=" +
-      location
-    );
-  }
+  function clearTitleNotes() {
+    titulo.value = "";
+    notas.value = "";
+  }
 
-  function openGoogleCalendarFallback(ev) {
-    const url = googleCalendarUrl(ev);
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    if (!w) {
-      formErr.textContent =
-        "Não foi possível abrir a janela. Permite pop-ups para este site.";
-      formErr.hidden = false;
-    }
-  }
+  function googleCalendarUrl(ev) {
+    const text = encodeURIComponent(ev.titulo);
+    const details = encodeURIComponent(ev.notas || "");
+    const location = encodeURIComponent(ev.local || "");
+    let dates;
+    if (ev.diaInteiro) {
+      const ds = ev.data.replace(/-/g, "");
+      const next = new Date(ev.data + "T12:00:00");
+      next.setDate(next.getDate() + 1);
+      const de =
+        next.getFullYear() +
+        String(next.getMonth() + 1).padStart(2, "0") +
+        String(next.getDate()).padStart(2, "0");
+      dates = ds + "/" + de;
+    } else {
+      const d = ev.data.replace(/-/g, "");
+      const hi = ev.horaIni.replace(":", "") + "00";
+      const hf = ev.horaFim.replace(":", "") + "00";
+      dates = d + "T" + hi + "/" + d + "T" + hf;
+    }
+    return (
+      "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
+      text +
+      "&dates=" +
+      dates +
+      "&details=" +
+      details +
+      "&location=" +
+      location
+    );
+  }
 
-  async function handleGoogleClick(ev) {
-    formErr.hidden = true;
-    if (!canUseGoogleOAuth()) {
-      showToast("Abre a página por http:// (servidor no PC), não pelo WhatsApp.");
-      openGoogleCalendarFallback(ev);
-      return;
-    }
-    const cid = getGoogleClientId();
-    if (cid && getStoredGoogleToken()) {
-      const r = await createGoogleCalendarEventViaApi(ev);
-      if (r.ok) {
-        showToast("Evento criado no Google Calendar.");
-        return;
-      }
-      showToast("Não foi possível gravar pela API. A abrir página do Google…");
-      openGoogleCalendarFallback(ev);
-      return;
-    }
-    if (cid && !getStoredGoogleToken()) {
-      initGoogleTokenClient();
-      if (tokenClient) {
-        pendingEventForGoogle = ev;
-        tokenClient.requestAccessToken({ prompt: "" });
-        showToast("Autoriza no Google — o evento será criado a seguir.");
-        return;
-      }
-    }
-    openGoogleCalendarFallback(ev);
-  }
+  function openGoogleCalendarFallback(ev) {
+    const url = googleCalendarUrl(ev);
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    if (!w) {
+      formErr.textContent =
+        "Não foi possível abrir a janela. Permite pop-ups para este site.";
+      formErr.hidden = false;
+    }
+  }
 
-  function addEvent() {
-    const ev = createEventFromForm();
-    if (!ev) return;
-    events.push(ev);
-    clearTitleNotes();
-    render();
-  }
+  async function handleGoogleClick(ev) {
+    formErr.hidden = true;
+    if (!canUseGoogleOAuth()) {
+      showToast("Abre a página por http:// (servidor no PC), não pelo WhatsApp.");
+      openGoogleCalendarFallback(ev);
+      return;
+    }
+    const cid = getGoogleClientId();
+    if (cid && getStoredGoogleToken()) {
+      const r = await createGoogleCalendarEventViaApi(ev);
+      if (r.ok) {
+        showToast("Evento criado no Google Calendar.");
+        return;
+      }
+      showToast("Não foi possível gravar pela API. A abrir página do Google…");
+      openGoogleCalendarFallback(ev);
+      return;
+    }
+    if (cid && !getStoredGoogleToken()) {
+      initGoogleTokenClient();
+      if (tokenClient) {
+        pendingEventForGoogle = ev;
+        tokenClient.requestAccessToken({ prompt: "" });
+        showToast("Autoriza no Google — o evento será criado a seguir.");
+        return;
+      }
+    }
+    openGoogleCalendarFallback(ev);
+  }
 
-  function removeEvent(id) {
-    const i = events.findIndex((e) => e.id === id);
-    if (i >= 0) {
-      events.splice(i, 1);
-      render();
-    }
-  }
+  function addEvent() {
+    const ev = createEventFromForm();
+    if (!ev) return;
+    events.push(ev);
+    clearTitleNotes();
+    render();
+  }
 
-  function formatarDataPt(isoDate) {
-    const [y, m, d] = isoDate.split("-");
-    return d + "/" + m + "/" + y;
-  }
+  function removeEvent(id) {
+    const i = events.findIndex((e) => e.id === id);
+    if (i >= 0) {
+      events.splice(i, 1);
+      render();
+    }
+  }
 
-  function formatarDataHoraCompleta(d) {
-    return d.toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
-  }
+  function formatarDataPt(isoDate) {
+    const [y, m, d] = isoDate.split("-");
+    return d + "/" + m + "/" + y;
+  }
 
-  function buildNotepadText() {
-    const agora = new Date();
-    let s =
-      "Agenda — eventos\n" +
-      "══════════════════════════════════════\n" +
-      "Atualizado: " +
-      formatarDataHoraCompleta(agora) +
-      "\n\n";
-    if (events.length === 0) {
-      s += "(Sem eventos na lista.)\n";
-      return s;
-    }
-    events.forEach(function (ev, i) {
-      s += "── Evento " + (i + 1) + " ──\n";
-      s += "Título: " + ev.titulo + "\n";
-      s += "Data:   " + formatarDataPt(ev.data) + "\n";
-      if (ev.diaInteiro) s += "Hora:   (dia inteiro)\n";
-      else s += "Hora:   " + ev.horaIni + " – " + ev.horaFim + "\n";
-      if (ev.local) s += "Local:  " + ev.local + "\n";
-      if (ev.notas) s += "Notas:  " + ev.notas.replace(/\n/g, "\n        ") + "\n";
-      s += "\n";
-    });
-    return s;
-  }
+  function formatarDataHoraCompleta(d) {
+    return d.toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
+  }
 
-  function triggerDownloadText(text, filename) {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
+  function buildNotepadText() {
+    const agora = new Date();
+    let s =
+      "Agenda — eventos\n" +
+      "══════════════════════════════════════\n" +
+      "Atualizado: " +
+      formatarDataHoraCompleta(agora) +
+      "\n\n";
+    if (events.length === 0) {
+      s += "(Sem eventos na lista.)\n";
+      return s;
+    }
+    events.forEach(function (ev, i) {
+      s += "── Evento " + (i + 1) + " ──\n";
+      s += "Título: " + ev.titulo + "\n";
+      s += "Data:   " + formatarDataPt(ev.data) + "\n";
+      if (ev.diaInteiro) s += "Hora:   (dia inteiro)\n";
+      else s += "Hora:   " + ev.horaIni + " – " + ev.horaFim + "\n";
+      if (ev.local) s += "Local:  " + ev.local + "\n";
+      if (ev.notas) s += "Notas:  " + ev.notas.replace(/\n/g, "\n        ") + "\n";
+      s += "\n";
+    });
+    return s;
+  }
 
-  async function shareTxt() {
-    const txt = buildNotepadText();
-    const fname = "agenda-" + new Date().toISOString().slice(0, 10) + ".txt";
-    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
-    const file = new File([blob], fname, { type: "text/plain", lastModified: Date.now() });
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          files: [file],
-          title: "Agenda",
-          text: "Lista de eventos",
-        });
-        return;
-      } catch (e) {
-        if (e.name === "AbortError") return;
-      }
-    }
-    triggerDownloadText(txt, fname);
-  }
+  function triggerDownloadText(text, filename) {
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
-  function render() {
-    countEl.textContent = String(events.length);
-    const has = events.length > 0;
-    btnDownload.disabled = !has;
-    btnDownloadTxt.disabled = !has;
-    btnShareTxt.disabled = !has;
-    if (events.length === 0) {
-      lista.hidden = true;
-      emptyMsg.hidden = false;
-      return;
-    }
-    emptyMsg.hidden = true;
-    lista.hidden = false;
-    lista.innerHTML = "";
-    events.forEach(function (ev) {
-      const li = document.createElement("li");
-      let quando = formatarDataPt(ev.data);
-      if (!ev.diaInteiro) {
-        quando += " · " + ev.horaIni + " – " + ev.horaFim;
-      } else {
-        quando += " (dia inteiro)";
-      }
-      const main = document.createElement("div");
-      main.innerHTML =
-        "<strong>" +
-        escapeHtml(ev.titulo) +
-        "</strong><span>" +
-        escapeHtml(quando) +
-        (ev.local ? "<br/>" + escapeHtml(ev.local) : "") +
-        "</span>";
-      const actions = document.createElement("div");
-      actions.className = "event-actions";
-      const btnG = document.createElement("button");
-      btnG.type = "button";
-      btnG.className = "btn-google-row";
-      btnG.textContent = "Google";
-      btnG.title = "Criar no Google Calendar (ou abrir página)";
-      btnG.addEventListener("click", function () {
-        handleGoogleClick(ev);
-      });
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn-remove";
-      btn.textContent = "Remover";
-      btn.addEventListener("click", function () {
-        removeEvent(ev.id);
-      });
-      actions.appendChild(btnG);
-      actions.appendChild(btn);
-      li.appendChild(main);
-      li.appendChild(actions);
-      lista.appendChild(li);
-    });
-  }
+  async function shareTxt() {
+    const txt = buildNotepadText();
+    const fname = "agenda-" + new Date().toISOString().slice(0, 10) + ".txt";
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const file = new File([blob], fname, { type: "text/plain", lastModified: Date.now() });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Agenda",
+          text: "Lista de eventos",
+        });
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return;
+      }
+    }
+    triggerDownloadText(txt, fname);
+  }
 
-  function escapeHtml(s) {
-    const div = document.createElement("div");
-    div.textContent = s;
-    return div.innerHTML;
-  }
+  function render() {
+    countEl.textContent = String(events.length);
+    const has = events.length > 0;
+    btnDownload.disabled = !has;
+    btnDownloadTxt.disabled = !has;
+    btnShareTxt.disabled = !has;
+    if (events.length === 0) {
+      lista.hidden = true;
+      emptyMsg.hidden = false;
+      return;
+    }
+    emptyMsg.hidden = true;
+    lista.hidden = false;
+    lista.innerHTML = "";
+    events.forEach(function (ev) {
+      const li = document.createElement("li");
+      let quando = formatarDataPt(ev.data);
+      if (!ev.diaInteiro) {
+        quando += " · " + ev.horaIni + " – " + ev.horaFim;
+      } else {
+        quando += " (dia inteiro)";
+      }
+      const main = document.createElement("div");
+      main.innerHTML =
+        "<strong>" +
+        escapeHtml(ev.titulo) +
+        "</strong><span>" +
+        escapeHtml(quando) +
+        (ev.local ? "<br/>" + escapeHtml(ev.local) : "") +
+        "</span>";
+      const actions = document.createElement("div");
+      actions.className = "event-actions";
+      const btnG = document.createElement("button");
+      btnG.type = "button";
+      btnG.className = "btn-google-row";
+      btnG.textContent = "Google";
+      btnG.title = "Criar no Google Calendar (ou abrir página)";
+      btnG.addEventListener("click", function () {
+        handleGoogleClick(ev);
+      });
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-remove";
+      btn.textContent = "Remover";
+      btn.addEventListener("click", function () {
+        removeEvent(ev.id);
+      });
+      actions.appendChild(btnG);
+      actions.appendChild(btn);
+      li.appendChild(main);
+      li.appendChild(actions);
+      lista.appendChild(li);
+    });
+  }
 
-  function buildICS() {
-    const lines = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//jogo-das-criancas//html//PT",
-      "CALSCALE:GREGORIAN",
-      "METHOD:PUBLISH",
-    ];
-    events.forEach(function (ev) {
-      lines.push("BEGIN:VEVENT");
-      lines.push("UID:" + ev.id);
-      lines.push("DTSTAMP:" + dtstampUTC());
-      lines.push("SUMMARY:" + escapeICalText(ev.titulo));
-      if (ev.notas) lines.push("DESCRIPTION:" + escapeICalText(ev.notas));
-      if (ev.local) lines.push("LOCATION:" + escapeICalText(ev.local));
-      if (ev.diaInteiro) {
-        const ds = ev.data.replace(/-/g, "");
-        const next = new Date(ev.data + "T12:00:00");
-        next.setDate(next.getDate() + 1);
-        const de =
-          next.getFullYear() +
-          String(next.getMonth() + 1).padStart(2, "0") +
-          String(next.getDate()).padStart(2, "0");
-        lines.push("DTSTART;VALUE=DATE:" + ds);
-        lines.push("DTEND;VALUE=DATE:" + de);
-      } else {
-        const d = ev.data.replace(/-/g, "");
-        const hi = ev.horaIni.replace(":", "") + "00";
-        const hf = ev.horaFim.replace(":", "") + "00";
-        lines.push("DTSTART:" + d + "T" + hi);
-        lines.push("DTEND:" + d + "T" + hf);
-      }
-      lines.push("END:VEVENT");
-    });
-    lines.push("END:VCALENDAR");
-    return lines.join("\r\n");
-  }
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
 
-  el("btnAdd").addEventListener("click", addEvent);
-  el("btnClear").addEventListener("click", function () {
-    if (events.length && !confirm("Apagar todos os eventos da lista?")) return;
-    events.length = 0;
-    render();
-  });
-  el("btnDownload").addEventListener("click", function () {
-    const ics = buildICS();
-    const stamp = new Date().toISOString().slice(0, 10);
-    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "eventos-" + stamp + ".ics";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-  el("btnDownloadTxt").addEventListener("click", function () {
-    triggerDownloadText(buildNotepadText(), "agenda-" + new Date().toISOString().slice(0, 10) + ".txt");
-  });
-  el("btnShareTxt").addEventListener("click", function () {
-    shareTxt();
-  });
+  function buildICS() {
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//jogo-das-criancas//html//PT",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ];
+    events.forEach(function (ev) {
+      lines.push("BEGIN:VEVENT");
+      lines.push("UID:" + ev.id);
+      lines.push("DTSTAMP:" + dtstampUTC());
+      lines.push("SUMMARY:" + escapeICalText(ev.titulo));
+      if (ev.notas) lines.push("DESCRIPTION:" + escapeICalText(ev.notas));
+      if (ev.local) lines.push("LOCATION:" + escapeICalText(ev.local));
+      if (ev.diaInteiro) {
+        const ds = ev.data.replace(/-/g, "");
+        const next = new Date(ev.data + "T12:00:00");
+        next.setDate(next.getDate() + 1);
+        const de =
+          next.getFullYear() +
+          String(next.getMonth() + 1).padStart(2, "0") +
+          String(next.getDate()).padStart(2, "0");
+        lines.push("DTSTART;VALUE=DATE:" + ds);
+        lines.push("DTEND;VALUE=DATE:" + de);
+      } else {
+        const d = ev.data.replace(/-/g, "");
+        const hi = ev.horaIni.replace(":", "") + "00";
+        const hf = ev.horaFim.replace(":", "") + "00";
+        lines.push("DTSTART:" + d + "T" + hi);
+        lines.push("DTEND:" + d + "T" + hf);
+      }
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return lines.join("\r\n");
+  }
 
-  el("btnSaveGoogleId").addEventListener("click", function () {
-    const v = googleClientIdInput ? googleClientIdInput.value.trim() : "";
-    try {
-      if (v) localStorage.setItem(STORAGE_GOOGLE_ID, v);
-      else localStorage.removeItem(STORAGE_GOOGLE_ID);
-    } catch (e) {}
-    initGoogleTokenClient();
-    updateGoogleStatus();
-    showToast(v ? "ID OAuth guardado." : "ID removido.");
-  });
-  el("btnGoogleSignIn").addEventListener("click", function () {
-    if (!canUseGoogleOAuth()) {
-      showToast(
-        "OAuth não funciona ao abrir pelo WhatsApp. Usa o navegador com http:// (ex.: servidor no PC)."
-      );
-      return;
-    }
-    if (!getGoogleClientId()) {
-      showToast("Cola e guarda o ID OAuth primeiro.");
-      return;
-    }
-    initGoogleTokenClient();
-    if (tokenClient) tokenClient.requestAccessToken({ prompt: "" });
-    else
-      showToast(
-        "Biblioteca Google ainda a carregar ou ID inválido. Espera uns segundos e tenta de novo."
-      );
-  });
-  el("btnGoogleSignOut").addEventListener("click", function () {
-    try {
-      sessionStorage.removeItem("gcal_access_token");
-      sessionStorage.removeItem("gcal_expires_at");
-    } catch (e) {}
-    updateGoogleStatus();
-    showToast("Sessão Google terminada.");
-  });
+  el("btnAdd").addEventListener("click", addEvent);
+  el("btnClear").addEventListener("click", function () {
+    if (events.length && !confirm("Apagar todos os eventos da lista?")) return;
+    events.length = 0;
+    render();
+  });
+  el("btnDownload").addEventListener("click", function () {
+    const ics = buildICS();
+    const stamp = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "eventos-" + stamp + ".ics";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  el("btnDownloadTxt").addEventListener("click", function () {
+    triggerDownloadText(buildNotepadText(), "agenda-" + new Date().toISOString().slice(0, 10) + ".txt");
+  });
+  el("btnShareTxt").addEventListener("click", function () {
+    shareTxt();
+  });
 
-  render();
-  updateGoogleStatus();
-  (function waitGsi() {
-    let tries = 0;
-    function tick() {
-      if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-        initGoogleTokenClient();
-        updateGoogleStatus();
-        return;
-      }
-      tries += 1;
-      if (tries < 120) setTimeout(tick, 100);
-      else if (!canUseGoogleOAuth()) updateGoogleStatus();
-    }
-    tick();
-  })();
+  el("btnSaveGoogleId").addEventListener("click", function () {
+    const v = googleClientIdInput ? googleClientIdInput.value.trim() : "";
+    try {
+      if (v) localStorage.setItem(STORAGE_GOOGLE_ID, v);
+      else localStorage.removeItem(STORAGE_GOOGLE_ID);
+    } catch (e) {}
+    initGoogleTokenClient();
+    updateGoogleStatus();
+    showToast(v ? "ID OAuth guardado." : "ID removido.");
+  });
+  el("btnGoogleSignIn").addEventListener("click", function () {
+    if (!canUseGoogleOAuth()) {
+      showToast(
+        "OAuth não funciona ao abrir pelo WhatsApp. Usa o navegador com http:// (ex.: servidor no PC)."
+      );
+      return;
+    }
+    if (!getGoogleClientId()) {
+      showToast("Cola e guarda o ID OAuth primeiro.");
+      return;
+    }
+    initGoogleTokenClient();
+    if (tokenClient) tokenClient.requestAccessToken({ prompt: "" });
+    else
+      showToast(
+        "Biblioteca Google ainda a carregar ou ID inválido. Espera uns segundos e tenta de novo."
+      );
+  });
+  el("btnGoogleSignOut").addEventListener("click", function () {
+    try {
+      sessionStorage.removeItem("gcal_access_token");
+      sessionStorage.removeItem("gcal_expires_at");
+    } catch (e) {}
+    updateGoogleStatus();
+    showToast("Sessão Google terminada.");
+  });
+
+  render();
+  updateGoogleStatus();
+  (function waitGsi() {
+    let tries = 0;
+    function tick() {
+      if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+        initGoogleTokenClient();
+        updateGoogleStatus();
+        return;
+      }
+      tries += 1;
+      if (tries < 120) setTimeout(tick, 100);
+      else if (!canUseGoogleOAuth()) updateGoogleStatus();
+    }
+    tick();
+  })();
 })();
-  </script>
+  </script>
 </body>
 </html>
