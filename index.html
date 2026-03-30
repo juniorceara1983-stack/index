@@ -224,25 +224,10 @@
 </head>
 <body>
   <h1>Eventos para o calendário</h1>
-  <p class="sub">Preenche os dados e adiciona à lista. O botão <strong>Google</strong> na lista pode <strong>criar o evento direto</strong> na tua conta (opcional, ver caixa abaixo) ou abrir o Google Calendário para confirmares. O ficheiro <strong>.ics</strong> é outra forma de importar.</p>
+  <p class="sub">Preenche os dados e adiciona à lista. O botão <strong>Google</strong> abre o google calendario <strong>cria o evento direto</strong> para confirmar.</strong> é outra forma de importar.</p>
 
   <div class="oauth-blocked" id="oauthBlockedBanner" hidden>
     <strong>Entrar com Google não funciona aqui.</strong> Estás a abrir a página pelo <strong>WhatsApp</strong> ou como ficheiro local — o Google exige um endereço <code>http://</code> ou <code>https://</code>. No PC, executa <code>SERVIR_PARA_TELEMOVEL.py</code> (ou outro servidor), abre no telemóvel <code>http://IP-DO-PC:porta/calendario-eventos.html</code> e adiciona esse URL nas origens OAuth na Google Cloud.
-  </div>
-
-  <div class="panel">
-    <h2>Gravar direto no Google (opcional)</h2>
-    <p class="hint" style="margin-top:0;">Para ao clicar em <strong>Google</strong> o evento <strong>gravar já</strong> no calendário (sem .ics e sem segunda página): na <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" style="color:var(--gold);">Google Cloud</a> ativa a <strong>Google Calendar API</strong>, cria um <strong>ID OAuth → Aplicação Web</strong> e cola aqui o ID. Depois <strong>Entrar com Google</strong>. A página tem de abrir por <code>http://</code> ou <code>https://</code> (não <code>file://</code>).</p>
-    <div class="field">
-      <label for="googleClientId">ID do cliente OAuth 2.0</label>
-      <input type="text" id="googleClientId" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false" />
-    </div>
-    <div class="btns">
-      <button type="button" class="btn-secondary" id="btnSaveGoogleId">Guardar ID</button>
-      <button type="button" class="btn-ok" id="btnGoogleSignIn">Entrar com Google</button>
-      <button type="button" class="btn-secondary" id="btnGoogleSignOut">Sair</button>
-    </div>
-    <p class="hint" id="googleStatus" role="status" style="margin-top:0.65rem;"></p>
   </div>
 
   <div class="panel">
@@ -288,12 +273,12 @@
     <p class="empty" id="emptyMsg">Ainda não há eventos. Adiciona pelo menos um.</p>
     <ul class="event-list" id="lista" hidden></ul>
     <div class="btns" style="margin-top:1rem;">
-      <button type="button" class="btn-ok" id="btnDownload" disabled>Descarregar .ics</button>
-      <button type="button" class="btn-secondary" id="btnDownloadTxt" disabled>Descarregar .txt</button>
-      <button type="button" class="btn-secondary" id="btnShareTxt" disabled>Partilhar .txt</button>
+      <button type="button" class="btn-ok" id="btnDownload" disabled>baixar .ics</button>
+      <button type="button" class="btn-secondary" id="btnDownloadTxt" disabled>baixar texto</button>
+      <button type="button" class="btn-secondary" id="btnShareTxt" disabled>compartilhar texto</button>
       <button type="button" class="btn-secondary" id="btnClear">Limpar lista</button>
     </div>
-    <p class="hint">O <strong>.txt</strong> é a lista em texto simples. O <strong>.ics</strong> importa para o calendário. Com Google ligado, o botão <strong>Google</strong> não precisa de .ics. Ver <code>COMO-criar-eventos-calendario.txt</code>.</p>
+     <p class="hint">O <strong>Arquivo em texto</strong> é o download simples do arquivo caso queira deixar salvo. O <strong>.ics</strong> é o arquivo que gera para o google calendario, nao precisa baixar se preferir</code>.</p>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
