@@ -4,270 +4,196 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#1e3a5f" />
-  <title>Criar eventos para o calendário</title>
+  <title>Gestor de Eventos</title>
 
   <link rel="manifest" href="manifest.json">
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('Service Worker registrado!'))
-          .catch(err => console.error('Falha ao registrar SW', err));
-      });
-    }
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --gold: #d4a853;
-      --cream: #fefce8;
-      --muted: #94a3b8;
-      --ok: #22c55e;
+      --bg: #0f172a; --card: #1e293b; --gold: #d4a853; --cream: #fefce8;
+      --muted: #94a3b8; --ok: #22c55e; --primary: #f59e0b;
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0;
-      min-height: 100vh;
+      margin: 0; min-height: 100vh;
       background: radial-gradient(ellipse 100% 80% at 50% -20%, #1e3a5f 0%, var(--bg) 50%);
-      font-family: "Source Sans 3", sans-serif;
-      color: var(--cream);
-      padding: 1rem;
-      padding-bottom: 2rem;
+      font-family: "Source Sans 3", sans-serif; color: var(--cream);
+      padding: 1rem; padding-bottom: 2rem;
     }
-    h1 {
-      font-family: "Fraunces", Georgia, serif;
-      font-weight: 700;
-      font-size: clamp(1.35rem, 4vw, 1.85rem);
-      text-align: center;
-      margin: 0 0 0.35rem;
-      color: var(--gold);
-    }
-    .sub {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.95rem;
-      max-width: 36rem;
-      margin: 0 auto 1.25rem;
-      line-height: 1.45;
-    }
+    h1 { font-family: "Fraunces", serif; color: var(--gold); text-align: center; margin-bottom: 0.5rem; }
     .panel {
-      max-width: 520px;
-      margin: 0 auto;
-      background: var(--card);
-      border-radius: 16px;
-      padding: 1.25rem;
-      border: 1px solid rgba(212, 168, 83, 0.25);
+      max-width: 520px; margin: 0 auto 1rem; background: var(--card);
+      border-radius: 16px; padding: 1.25rem; border: 1px solid rgba(212, 168, 83, 0.25);
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
     }
-    .panel h2 {
-      font-family: "Fraunces", serif;
-      font-size: 1.05rem;
-      color: var(--gold);
-      margin: 0 0 0.75rem;
-      font-weight: 600;
-    }
-    label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
     .field { margin-bottom: 0.85rem; }
-    input[type="text"], input[type="date"], input[type="time"], textarea {
-      width: 100%;
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 0.65rem 0.75rem;
-      border-radius: 10px;
-      border: 2px solid rgba(148, 163, 184, 0.35);
-      background: rgba(15, 23, 42, 0.6);
-      color: var(--cream);
+    label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
+    input, textarea {
+      width: 100%; padding: 0.65rem; border-radius: 10px; border: 2px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.6); color: var(--cream); font-family: inherit;
     }
-    input:focus, textarea:focus { outline: none; border-color: var(--gold); }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    @media (max-width: 420px) { .row2 { grid-template-columns: 1fr; } }
+    .btns { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    button { 
+      font-weight: 600; padding: 0.8rem; border-radius: 12px; border: none; cursor: pointer; transition: 0.2s;
+    }
+    .btn-primary { background: linear-gradient(180deg, #f59e0b, #b45309); color: #0f172a; width: 100%; }
+    .btn-share { background: linear-gradient(180deg, #4ade80, #15803d); color: #0f172a; width: 100%; }
+    .btn-secondary { background: rgba(148, 163, 184, 0.1); color: var(--cream); border: 1px solid rgba(148, 163, 184, 0.3); flex: 1; }
     
-    .btns { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
-    button { font-family: inherit; font-size: 0.95rem; font-weight: 600; padding: 0.75rem 1rem; border-radius: 12px; border: none; cursor: pointer; transition: 0.2s; }
+    /* Calendário Mini */
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; text-align: center; }
+    .cal-day { padding: 8px 2px; font-size: 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.05); }
+    .has-event { background: var(--gold); color: var(--bg); font-weight: bold; box-shadow: 0 0 8px var(--gold); }
     
-    .btn-primary { background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%); color: #0f172a; box-shadow: 0 4px 0 #92400e; }
-    .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #92400e; }
-    
-    .btn-ok { background: linear-gradient(180deg, #4ade80 0%, #15803d 100%); color: #0f172a; box-shadow: 0 4px 0 #166534; width: 100%; }
-    .btn-ok:active { transform: translateY(2px); box-shadow: 0 2px 0 #166534; }
-    
-    .btn-secondary { background: rgba(148, 163, 184, 0.1); color: var(--cream); border: 1px solid rgba(148, 163, 184, 0.35); }
-    
-    .event-list li { background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 0.75rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
-    
-    .btn-google-row { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); padding: 0.4rem 0.6rem; }
-    .btn-remove { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.4rem 0.6rem; margin-top: 4px; }
-
-    .hint-box { font-size: 0.8rem; color: var(--muted); margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(148, 163, 184, 0.2); line-height: 1.5; }
-    .hint-box b { color: var(--gold); }
-
-    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid var(--gold); padding: 0.8rem 1.2rem; border-radius: 50px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    /* Modal de Preview */
+    #previewArea { 
+      background: #0f172a; border: 1px solid var(--gold); padding: 10px; 
+      border-radius: 8px; margin-top: 10px; display: none;
+    }
+    .event-list-item { background: rgba(15,23,42,0.5); border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
-  <h1>Eventos para o calendário</h1>
-  <p class="sub">Organize sua agenda e salve diretamente no Google Calendar.</p>
+
+  <h1>Meus Agendamentos</h1>
 
   <div class="panel">
-    <h2>Novo evento</h2>
     <div class="field">
-      <label for="titulo">Título</label>
-      <input type="text" id="titulo" placeholder="Ex.: Reunião de catequese" />
+      <label>Título do Evento</label>
+      <input type="text" id="titulo" placeholder="Ex: Farm Boss / Reunião" />
     </div>
     <div class="field">
-      <label for="data">Data</label>
+      <label>Data</label>
       <input type="date" id="data" />
     </div>
-    <label class="check" style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer;">
-      <input type="checkbox" id="diaInteiro" style="width: 18px; height: 18px; accent-color: var(--gold);" />
-      Dia inteiro (sem hora)
-    </label>
-    <div class="row2" id="horasRow">
-      <div class="field">
-        <label for="horaIni">Início</label>
-        <input type="time" id="horaIni" />
-      </div>
-      <div class="field">
-        <label for="horaFim">Fim</label>
-        <input type="time" id="horaFim" />
-      </div>
-    </div>
-    <div class="field">
-      <label for="local">Local (opcional)</label>
-      <input type="text" id="local" placeholder="Ex.: Paróquia" />
-    </div>
-    <div class="field">
-      <label for="notas">Notas (opcional)</label>
-      <textarea id="notas" placeholder="Detalhes…" style="width: 100%; min-height: 60px; border-radius: 10px;"></textarea>
-    </div>
     <div class="btns">
-      <button type="button" class="btn-primary" id="btnAdd">Adicionar à lista</button>
+      <button class="btn-primary" id="btnAdd">Agendar Evento</button>
     </div>
   </div>
 
-  <div class="panel" style="margin-top:1rem;">
-    <h2>Lista (<span id="count">0</span>)</h2>
-    <p class="empty" id="emptyMsg" style="font-style: italic; color: var(--muted);">Ainda não há eventos.</p>
-    <ul id="lista" style="list-style: none; padding: 0; margin: 0;"></ul>
+  <div class="panel">
+    <h2>Calendário Mensal</h2>
+    <div id="calHeader" style="text-align:center; margin-bottom:10px; font-weight:bold; color:var(--gold)"></div>
+    <div class="cal-grid" id="calContainer"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Lista de Eventos (<span id="count">0</span>)</h2>
+    <ul id="lista" style="list-style:none; padding:0;"></ul>
+    
     <div class="btns" style="margin-top:1rem; flex-direction: column;">
-      <button type="button" class="btn-ok" id="btnDownload" disabled>arquivo .ics</button>
+      <button class="btn-share" id="btnShowPreview" disabled>Visualizar e Compartilhar</button>
+      
+      <div id="previewArea">
+        <label>Edite o texto se desejar:</label>
+        <textarea id="textPreview" style="height: 150px; font-size: 0.9rem; margin-bottom: 10px;"></textarea>
+        <button class="btn-primary" id="btnFinalShare" style="background: var(--ok); color: white;">Enviar Agora</button>
+      </div>
+
       <div style="display: flex; gap: 8px; width: 100%; margin-top: 8px;">
-         <button type="button" class="btn-secondary" id="btnDownloadTxt" style="flex: 1;" disabled>baixar texto</button>
-         <button type="button" class="btn-secondary" id="btnClear" style="flex: 1;">Limpar lista</button>
+        <button class="btn-secondary" id="btnDownloadTxt" disabled>Salvar .txt</button>
+        <button class="btn-secondary" id="btnClear">Limpar Tudo</button>
       </div>
     </div>
-
-    <div class="hint-box">
-      <b>Legenda:</b><br>
-      • <b>Google:</b> Abre o evento direto no seu calendário oficial.<br>
-      • <b>Arquivo .ics:</b> Gera o arquivo para importar no iPhone ou Android.<br>
-      • <b>Baixar texto:</b> Salva um resumo rápido em formato .txt.
-    </div>
   </div>
 
-  <div id="toast" class="toast" hidden></div>
+  <div id="toast" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--card); padding:10px 20px; border-radius:20px; border:1px solid var(--gold); display:none; z-index:100;"></div>
 
   <script>
     (function () {
-      const events = [];
+      let events = JSON.parse(localStorage.getItem('meus_eventos_l2')) || [];
       const el = (id) => document.getElementById(id);
-      const showToast = (msg) => {
-        const t = el("toast"); t.textContent = msg; t.hidden = false;
-        setTimeout(() => t.hidden = true, 3000);
-      };
 
-      el("data").value = new Date().toISOString().split('T')[0];
-      el("horaIni").value = "10:00";
-      el("horaFim").value = "11:00";
+      const showToast = (m) => { el("toast").innerText = m; el("toast").style.display = "block"; setTimeout(()=>el("toast").style.display="none", 2000); };
 
-      el("diaInteiro").addEventListener("change", (e) => {
-        el("horasRow").style.display = e.target.checked ? "none" : "grid";
-      });
+      function save() { 
+        localStorage.setItem('meus_eventos_l2', JSON.stringify(events));
+        render(); 
+        renderCalendar();
+      }
 
-      function getGoogleUrl(ev) {
-        const start = ev.diaInteiro ? ev.data.replace(/-/g, '') : ev.data.replace(/-/g, '') + 'T' + ev.horaIni.replace(':', '') + '00';
-        const end = ev.diaInteiro ? ev.data.replace(/-/g, '') : ev.data.replace(/-/g, '') + 'T' + ev.horaFim.replace(':', '') + '00';
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${start}/${end}&details=${encodeURIComponent(ev.notas)}&location=${encodeURIComponent(ev.local)}`;
+      function renderCalendar() {
+        const container = el("calContainer");
+        const header = el("calHeader");
+        container.innerHTML = "";
+        const now = new Date();
+        header.innerText = now.toLocaleString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
+        
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        
+        for (let i = 1; i <= daysInMonth; i++) {
+          const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+          const hasEv = events.some(e => e.data === dateStr);
+          const dayEl = document.createElement("div");
+          dayEl.className = "cal-day" + (hasEv ? " has-event" : "");
+          dayEl.innerText = i;
+          container.appendChild(dayEl);
+        }
       }
 
       function render() {
         const listEl = el("lista");
-        const emptyEl = el("emptyMsg");
-        el("count").textContent = events.length;
-        
-        if (events.length === 0) {
-          listEl.innerHTML = "";
-          emptyEl.style.display = "block";
-          el("btnDownload").disabled = el("btnDownloadTxt").disabled = true;
-          return;
-        }
-
-        emptyEl.style.display = "none";
-        el("btnDownload").disabled = el("btnDownloadTxt").disabled = false;
+        el("count").innerText = events.length;
         listEl.innerHTML = "";
+        
+        el("btnShowPreview").disabled = el("btnDownloadTxt").disabled = (events.length === 0);
 
-        events.forEach((ev, index) => {
+        events.forEach((ev, i) => {
           const li = document.createElement("li");
           li.className = "event-list-item";
-          li.style.cssText = "background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 0.75rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;";
-          li.innerHTML = `
-            <div>
-              <strong style="display: block; color: var(--cream);">${ev.titulo}</strong>
-              <span style="font-size: 0.85rem; color: var(--muted);">${ev.data} ${ev.diaInteiro ? '(Dia Todo)' : '· ' + ev.horaIni}</span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <button class="btn-google-row" onclick="window.open('${getGoogleUrl(ev)}', '_blank')">Google</button>
-              <button class="btn-remove" onclick="window.removeEvent(${index})">Remover</button>
-            </div>
-          `;
+          li.innerHTML = `<div><strong>${ev.titulo}</strong><br><small>${ev.data}</small></div>
+                          <button style="background:none; color:#fca5a5; border:1px solid #fca5a5; padding:5px; border-radius:5px" onclick="removeEv(${i})">X</button>`;
           listEl.appendChild(li);
         });
       }
 
-      window.removeEvent = (index) => {
-        events.splice(index, 1);
-        render();
-      };
+      window.removeEv = (i) => { events.splice(i, 1); save(); };
 
       el("btnAdd").onclick = () => {
-        const titulo = el("titulo").value.trim();
-        if (!titulo) return showToast("Digite um título!");
-        events.push({
-          titulo, data: el("data").value, diaInteiro: el("diaInteiro").checked,
-          horaIni: el("horaIni").value, horaFim: el("horaFim").value,
-          local: el("local").value, notas: el("notas").value
-        });
-        el("titulo").value = ""; el("notas").value = "";
-        render();
-        showToast("Adicionado!");
+        const t = el("titulo").value;
+        const d = el("data").value;
+        if(!t || !d) return showToast("Preencha título e data!");
+        events.push({ titulo: t, data: d });
+        el("titulo").value = "";
+        save();
+        showToast("Agendado!");
       };
 
-      el("btnClear").onclick = () => { if(confirm("Limpar lista?")) { events.length = 0; render(); } };
+      // LOGICA DE PREVIEW
+      el("btnShowPreview").onclick = () => {
+        let txt = "*📅 MEUS AGENDAMENTOS:*\n\n";
+        events.forEach(e => txt += `✅ ${e.titulo} - ${e.data}\n`);
+        el("textPreview").value = txt;
+        el("previewArea").style.display = "block";
+      };
 
-      el("btnDownload").onclick = () => {
-        let ics = "BEGIN:VCALENDAR\nVERSION:2.0\n";
-        events.forEach(ev => {
-          ics += `BEGIN:VEVENT\nSUMMARY:${ev.titulo}\nDTSTART:${ev.data.replace(/-/g,'')}T090000\nEND:VEVENT\n`;
-        });
-        ics += "END:VCALENDAR";
-        const blob = new Blob([ics], {type: "text/calendar"});
-        const a = document.createElement("a");
+      el("btnFinalShare").onclick = () => {
+        const finalTxt = el("textPreview").value;
+        if (navigator.share) {
+          navigator.share({ text: finalTxt });
+        } else {
+          navigator.clipboard.writeText(finalTxt);
+          showToast("Copiado para o WhatsApp!");
+        }
+      };
+
+      el("btnDownloadTxt").onclick = () => {
+        const content = el("textPreview").value || "Lista Vazia";
+        const blob = new Blob([content], { type: 'text/plain' });
+        const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = "eventos.ics";
+        a.download = 'agenda.txt';
         a.click();
       };
+
+      el("btnClear").onclick = () => { if(confirm("Limpar tudo?")) { events = []; save(); el("previewArea").style.display = "none"; } };
+
+      el("data").value = new Date().toISOString().split('T')[0];
+      render();
+      renderCalendar();
     })();
   </script>
 </body>
