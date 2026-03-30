@@ -224,7 +224,7 @@
 </head>
 <body>
   <h1>Eventos para o calendário</h1>
-  <p class="sub">Preenche os dados e adiciona à lista. O botão <strong>Google</strong> abre o google calendario <strong>cria o evento direto</strong> para confirmar.</strong> é outra forma de importar.</p>
+  <p class="sub">Preenche os dados e adiciona à lista. O botão <strong>Google</strong> abre o google calendario <strong>cria o evento direto</strong> para confirmar.</p>
 
   <div class="oauth-blocked" id="oauthBlockedBanner" hidden>
     <strong>Entrar com Google não funciona aqui.</strong> Estás a abrir a página pelo <strong>WhatsApp</strong> ou como ficheiro local — o Google exige um endereço <code>http://</code> ou <code>https://</code>. No PC, executa <code>SERVIR_PARA_TELEMOVEL.py</code> (ou outro servidor), abre no telemóvel <code>http://IP-DO-PC:porta/calendario-eventos.html</code> e adiciona esse URL nas origens OAuth na Google Cloud.
@@ -273,12 +273,12 @@
     <p class="empty" id="emptyMsg">Ainda não há eventos. Adiciona pelo menos um.</p>
     <ul class="event-list" id="lista" hidden></ul>
     <div class="btns" style="margin-top:1rem;">
-      <button type="button" class="btn-ok" id="btnDownload" disabled>baixar .ics</button>
+      <button type="button" class="btn-ok" id="btnDownload" disabled>arquivo .ics</button>
       <button type="button" class="btn-secondary" id="btnDownloadTxt" disabled>baixar texto</button>
       <button type="button" class="btn-secondary" id="btnShareTxt" disabled>compartilhar texto</button>
       <button type="button" class="btn-secondary" id="btnClear">Limpar lista</button>
     </div>
-     <p class="hint">O <strong>Arquivo em texto</strong> é o download simples do arquivo caso queira deixar salvo. O <strong>.ics</strong> é o arquivo que gera para o google calendario, nao precisa baixar se preferir</code>.</p>
+     <p class="hint">A <strong>opcao de baixar texto</strong> é o download simples do arquivo caso queira deixar salvo. O <strong>baixar .ics</strong> é o arquivo que gera para o google calendario, nao precisa baixar se preferir</code>.</p>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
