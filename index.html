@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#1e3a5f" />
-  <title>Gestor de Eventos J&I</title>
+  <title>Agenda de Eventos</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
 
   <style>
@@ -22,7 +21,7 @@
       font-family: "Source Sans 3", sans-serif; color: var(--cream);
       padding: 1rem; padding-bottom: 2rem;
     }
-    h1, h2 { font-family: "Fraunces", serif; color: var(--gold); margin-bottom: 0.5rem; }
+    h1, h2 { font-family: "Fraunces", serif; color: var(--gold); text-align: center; }
     .panel {
       max-width: 550px; margin: 0 auto 1rem; background: var(--card);
       border-radius: 16px; padding: 1.25rem; border: 1px solid rgba(212, 168, 83, 0.2);
@@ -35,42 +34,40 @@
       background: rgba(15, 23, 42, 0.5); color: var(--cream); font-family: inherit;
     }
     .btns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    button { font-weight: 600; padding: 0.7rem; border-radius: 10px; border: none; cursor: pointer; transition: 0.2s; }
-    .btn-primary { background: linear-gradient(180deg, #f59e0b, #b45309); color: #0f172a; width: 100%; }
-    .btn-share { background: linear-gradient(180deg, #4ade80, #15803d); color: #0f172a; width: 100%; }
+    button { font-weight: 600; padding: 0.7rem; border-radius: 10px; border: none; cursor: pointer; transition: 0.2s; width: 100%; }
+    .btn-primary { background: linear-gradient(180deg, #f59e0b, #b45309); color: #0f172a; }
+    .btn-share { background: linear-gradient(180deg, #4ade80, #15803d); color: #0f172a; }
     .btn-secondary { background: rgba(148, 163, 184, 0.1); color: var(--cream); border: 1px solid rgba(148, 163, 184, 0.2); flex: 1; }
     
-    /* Calendário */
-    .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-    .cal-day { padding: 8px 0; font-size: 0.8rem; border-radius: 6px; background: rgba(255,255,255,0.03); }
-    .has-event { background: var(--gold); color: var(--bg); font-weight: bold; }
-    
-    /* Lista */
     .event-item { 
       background: rgba(15,23,42,0.4); border-radius: 12px; padding: 12px; 
       margin-bottom: 10px; border-left: 4px solid var(--gold);
     }
-    .event-header { display: flex; align-items: flex-start; gap: 10px; }
-    .event-content { flex: 1; }
     .event-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
-    .btn-mini { font-size: 0.7rem; padding: 4px 8px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid #3b82f6; }
+    .btn-mini { font-size: 0.7rem; padding: 4px 8px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid #3b82f6; width: auto; }
     
+    /* MODAL DE RESUMO (FIX) */
     #previewModal { 
-      position: fixed; top: 10%; left: 5%; right: 5%; background: var(--card); 
-      border: 2px solid var(--gold); padding: 20px; border-radius: 15px; z-index: 1000; display: none;
-      max-width: 500px; margin: auto; box-shadow: 0 0 100px rgba(0,0,0,0.8);
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 3000;
+      padding: 1rem;
     }
+    .modal-content {
+      background: var(--card); border: 2px solid var(--gold); border-radius: 16px;
+      padding: 1.5rem; max-width: 450px; width: 100%; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid var(--gold); padding: 10px 20px; border-radius: 50px; display: none; z-index: 4000; }
   </style>
 </head>
 <body>
 
-  <h1>Minha Agenda</h1>
+  <h1>Agenda L2TITAN</h1>
 
-  <div class="panel">
+  <div class="panel" id="formPanel">
     <div class="field">
       <label>Título</label>
-      <input type="text" id="titulo" placeholder="Nome do compromisso" />
+      <input type="text" id="titulo" placeholder="Ex: Farm Boss / Reunião" />
     </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
       <div class="field">
@@ -84,97 +81,78 @@
     </div>
     <div class="field">
       <label>Descrição</label>
-      <textarea id="desc" rows="2" placeholder="Detalhes opcionais..."></textarea>
+      <textarea id="desc" rows="2" placeholder="Detalhes..."></textarea>
     </div>
-    <button class="btn-primary" id="btnAdd">Salvar Evento</button>
+    <button class="btn-primary" id="btnAdd">Salvar Novo Evento</button>
   </div>
 
   <div class="panel">
-    <div class="cal-nav">
-      <button class="btn-secondary" onclick="changeMonth(-1)">❮</button>
-      <div id="calMonth" style="font-weight: bold; color: var(--gold)"></div>
-      <button class="btn-secondary" onclick="changeMonth(1)">❯</button>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-  </div>
-
-  <div class="panel">
-    <h2>Próximos Eventos</h2>
+    <h2>Eventos Agendados</h2>
     <div id="lista"></div>
-    <div class="btns" style="margin-top:15px;">
-      <button class="btn-share" id="btnPreview" disabled>Gerar Texto p/ WhatsApp</button>
-      <button class="btn-secondary" id="btnClear">Limpar Tudo</button>
-    </div>
   </div>
 
   <div id="previewModal">
-    <h3 style="color:var(--gold); margin-top:0;">Resumo Formatado</h3>
-    <div id="previewContent" style="white-space: pre-wrap; background:#0f172a; padding:10px; border-radius:8px; font-size:0.9rem; margin-bottom:15px; max-height:200px; overflow-y:auto;"></div>
-    <div class="btns">
-      <button class="btn-share" id="btnConfirmSend">Enviar</button>
-      <button class="btn-secondary" onclick="el('previewModal').style.display='none'">Fechar</button>
+    <div class="modal-content">
+      <h3 style="color:var(--gold); margin-top:0;">Resumo para Envio</h3>
+      <div id="previewContent" style="white-space: pre-wrap; background:#0f172a; padding:12px; border-radius:10px; font-size:0.9rem; margin-bottom:15px; border: 1px solid rgba(255,255,255,0.1); max-height: 250px; overflow-y: auto;"></div>
+      <div class="btns">
+        <button class="btn-share" id="btnConfirmSend">Enviar para WhatsApp</button>
+        <button class="btn-secondary" id="btnCloseModal">Voltar</button>
+      </div>
     </div>
   </div>
 
+  <div id="toast"></div>
+
   <script>
     (function () {
-      let events = JSON.parse(localStorage.getItem('agenda_v3')) || [];
-      let currentCalDate = new Date();
+      let events = JSON.parse(localStorage.getItem('agenda_share_v1')) || [];
       const el = (id) => document.getElementById(id);
 
+      function showToast(m) { 
+        el("toast").innerText = m; el("toast").style.display = "block"; 
+        setTimeout(() => el("toast").style.display = "none", 3000); 
+      }
+
+      // IMPORTAÇÃO VIA URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('t')) {
+        const newEv = {
+          titulo: urlParams.get('t'), data: urlParams.get('d'),
+          hora: urlParams.get('h'), desc: urlParams.get('s')
+        };
+        setTimeout(() => {
+            if (confirm(`Deseja adicionar o evento "${newEv.titulo}" à sua agenda?`)) {
+            events.push(newEv);
+            save();
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showToast("Evento importado!");
+            }
+        }, 500);
+      }
+
       function save() { 
-        localStorage.setItem('agenda_v3', JSON.stringify(events));
+        localStorage.setItem('agenda_share_v1', JSON.stringify(events));
         render(); 
-        renderCalendar();
       }
 
-      window.changeMonth = (n) => {
-        currentCalDate.setMonth(currentCalDate.getMonth() + n);
-        renderCalendar();
-      };
-
-      function renderCalendar() {
-        const grid = el("calGrid");
-        grid.innerHTML = "";
-        const m = currentCalDate.getMonth();
-        const y = currentCalDate.getFullYear();
-        el("calMonth").innerText = new Intl.DateTimeFormat('pt-BR', {month:'long', year:'numeric'}).format(currentCalDate).toUpperCase();
-        
-        const daysInMonth = new Date(y, m + 1, 0).getDate();
-        for (let i = 1; i <= daysInMonth; i++) {
-          const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-          const hasEv = events.some(e => e.data === dStr);
-          const day = document.createElement("div");
-          day.className = "cal-day" + (hasEv ? " has-event" : "");
-          day.innerText = i;
-          grid.appendChild(day);
-        }
-      }
-
-      function getGCalLink(ev) {
-        const d = ev.data.replace(/-/g, '');
-        const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${h}&details=${encodeURIComponent(ev.desc)}`;
+      function getShareLink(ev) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}?t=${encodeURIComponent(ev.titulo)}&d=${ev.data}&h=${ev.hora}&s=${encodeURIComponent(ev.desc)}`;
       }
 
       function render() {
         const listEl = el("lista");
-        listEl.innerHTML = events.length ? "" : "<p style='color:var(--muted)'>Nenhum evento.</p>";
-        el("btnPreview").disabled = events.length === 0;
+        listEl.innerHTML = events.length ? "" : "<p style='color:var(--muted); text-align:center'>Nenhum compromisso.</p>";
 
         events.forEach((ev, i) => {
           const div = document.createElement("div");
           div.className = "event-item";
           div.innerHTML = `
-            <div class="event-header">
-              <input type="checkbox" class="send-check" data-index="${i}" checked style="width:20px; height:20px;">
-              <div class="event-content">
-                <strong>${ev.titulo}</strong><br>
-                <small>${ev.data} às ${ev.hora || '--:--'}</small>
-                <p style="font-size:0.8rem; color:var(--muted); margin:5px 0 0;">${ev.desc || ''}</p>
-              </div>
-            </div>
+            <strong>${ev.titulo}</strong><br>
+            <small>📅 ${ev.data} às ${ev.hora || '--:--'}</small>
             <div class="event-actions">
+              <button class="btn-mini btn-share" style="background:rgba(74, 222, 128, 0.15); color:#4ade80; border-color:#4ade80" onclick="prepareShare(${i})">WhatsApp</button>
               <button class="btn-mini" onclick="window.open('${getGCalLink(ev)}', '_blank')">Google</button>
               <button class="btn-mini" style="border-color:#fca5a5; color:#fca5a5; background:none" onclick="removeEv(${i})">Excluir</button>
             </div>
@@ -183,44 +161,54 @@
         });
       }
 
-      window.removeEv = (i) => { events.splice(i, 1); save(); };
+      // CORREÇÃO DOS BOTÕES DO MODAL
+      let currentShareTxt = "";
+      window.prepareShare = (i) => {
+        const ev = events[i];
+        const link = getShareLink(ev);
+        currentShareTxt = `*📅 EVENTO L2TITAN:* \n\n📌 *${ev.titulo}*\n⏰ ${ev.data} às ${ev.hora}\n📝 ${ev.desc}\n\n👇 *Adicione à sua agenda clicando aqui:* \n${link}`;
+        
+        el("previewContent").innerText = currentShareTxt;
+        el("previewModal").style.display = "flex";
+      };
+
+      el("btnCloseModal").onclick = () => {
+        el("previewModal").style.display = "none";
+      };
+
+      el("btnConfirmSend").onclick = () => {
+        if (navigator.share) {
+          navigator.share({ text: currentShareTxt }).then(() => {
+            el("previewModal").style.display = "none";
+          });
+        } else {
+          navigator.clipboard.writeText(currentShareTxt);
+          showToast("Copiado! Cole no WhatsApp.");
+          el("previewModal").style.display = "none";
+        }
+      };
+
+      function getGCalLink(ev) {
+        const d = ev.data.replace(/-/g, '');
+        const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${h}&details=${encodeURIComponent(ev.desc)}`;
+      }
+
+      window.removeEv = (i) => { if(confirm("Deseja apagar este evento?")) { events.splice(i, 1); save(); } };
 
       el("btnAdd").onclick = () => {
         const titulo = el("titulo").value;
         const data = el("data").value;
-        if(!titulo || !data) return alert("Título e Data são obrigatórios!");
+        if(!titulo || !data) return showToast("Título e Data obrigatórios!");
         events.push({ titulo, data, hora: el("hora").value, desc: el("desc").value });
         el("titulo").value = ""; el("desc").value = "";
         save();
+        showToast("Evento Salvo!");
       };
-
-      el("btnPreview").onclick = () => {
-        const selected = document.querySelectorAll(".send-check:checked");
-        if(!selected.length) return alert("Selecione ao menos um evento!");
-        
-        let txt = "*📅 RESUMO DA AGENDA:*\n\n";
-        selected.forEach(chk => {
-          const ev = events[chk.dataset.index];
-          txt += `✅ *${ev.titulo}*\n⏰ ${ev.data} às ${ev.hora || '--:--'}\n📝 ${ev.desc || 'Sem descrição'}\n\n`;
-        });
-        
-        el("previewContent").innerText = txt;
-        el("previewModal").style.display = "block";
-      };
-
-      el("btnConfirmSend").onclick = () => {
-        const txt = el("previewContent").innerText;
-        if(navigator.share) navigator.share({ text: txt });
-        else { navigator.clipboard.writeText(txt); alert("Copiado!"); }
-        el("previewModal").style.display = "none";
-      };
-
-      el("btnClear").onclick = () => { if(confirm("Limpar tudo?")) { events = []; save(); } };
 
       el("data").value = new Date().toISOString().split('T')[0];
-      save();
+      render();
     })();
   </script>
 </body>
-      </html>
-      
+</html>
