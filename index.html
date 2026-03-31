@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#1e3a5f" />
-  <title>Gestor de Eventos</title>
+  <title>Gestor de Eventos Pro</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
@@ -61,12 +61,12 @@
   <h1>Minha Agenda</h1>
 
   <div class="panel">
-    <div class="field"><label>Título</label><input type="text" id="titulo" /></div>
+    <div class="field"><label>Título</label><input type="text" id="titulo" placeholder="Ex: Farm Boss" /></div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
       <div class="field"><label>Data</label><input type="date" id="data" /></div>
       <div class="field"><label>Hora</label><input type="time" id="hora" /></div>
     </div>
-    <div class="field"><label>Descrição</label><textarea id="desc" rows="2"></textarea></div>
+    <div class="field"><label>Descrição</label><textarea id="desc" rows="2" placeholder="Detalhes..."></textarea></div>
     <button class="btn-primary" id="btnAdd">Salvar Evento</button>
   </div>
 
@@ -109,19 +109,6 @@
 
       function showToast(m) { el("toast").innerText = m; el("toast").style.display = "block"; setTimeout(() => el("toast").style.display = "none", 3000); }
 
-      // IMPORTAÇÃO VIA URL
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('t')) {
-        const newEv = { titulo: urlParams.get('t'), data: urlParams.get('d'), hora: urlParams.get('h'), desc: urlParams.get('s') };
-        setTimeout(() => {
-          if (confirm(`Adicionar "${newEv.titulo}" à sua agenda?`)) {
-            events.push(newEv); save();
-            window.history.replaceState({}, document.title, window.location.pathname);
-            showToast("Evento importado!");
-          }
-        }, 500);
-      }
-
       function save() { localStorage.setItem('agenda_v4', JSON.stringify(events)); render(); renderCalendar(); }
 
       window.changeMonth = (n) => { currentCalDate.setMonth(currentCalDate.getMonth() + n); renderCalendar(); };
@@ -141,7 +128,8 @@
       }
 
       function getGCalLink(ev) {
-        const d = ev.data.replace(/-/g, ''); const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
+        const d = ev.data.replace(/-/g, '');
+        const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
         return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${h}&details=${encodeURIComponent(ev.desc)}`;
       }
 
@@ -162,8 +150,8 @@
         let txt = "*📅 RESUMO DA AGENDA:*\n\n";
         selected.forEach(chk => {
           const ev = events[chk.dataset.index];
-          const link = window.location.origin + window.location.pathname + `?t=${encodeURIComponent(ev.titulo)}&d=${ev.data}&h=${ev.hora}&s=${encodeURIComponent(ev.desc)}`;
-          txt += `✅ *${ev.titulo}*\n⏰ ${ev.data} às ${ev.hora}\n🔗 Add na Agenda: ${link}\n\n`;
+          const gLink = getGCalLink(ev); // Agora usamos o link direto do Google
+          txt += `✅ *${ev.titulo}*\n⏰ ${ev.data} às ${ev.hora}\n🔗 Salvar na Agenda: ${gLink}\n\n`;
         });
         el("previewText").innerText = txt; el("previewModal").style.display = "flex";
       };
@@ -176,6 +164,7 @@
 
       el("btnCloseModal").onclick = () => el("previewModal").style.display = "none";
       window.removeEv = (i) => { if(confirm("Remover?")) { events.splice(i, 1); save(); } };
+      
       el("btnAdd").onclick = () => {
         if(!el("titulo").value || !el("data").value) return showToast("Título e Data!");
         events.push({ titulo: el("titulo").value, data: el("data").value, hora: el("hora").value, desc: el("desc").value });
