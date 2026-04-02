@@ -6,6 +6,12 @@
   <meta name="theme-color" content="#1e3a5f" />
   <title>Gestor de Eventos Pro</title>
 
+  <link rel="manifest" href="manifest-eventos.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw-eventos.js');
+  }
+</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
 
