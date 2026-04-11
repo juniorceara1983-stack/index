@@ -180,7 +180,7 @@
         try {
           const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
           if (res.ok) { const short = await res.text(); if (short.startsWith('http')) return short.trim(); }
-        } catch (e) {}
+        } catch (e) { console.warn('URL shortening failed, using original link:', e); }
         return url;
       }
 
@@ -228,7 +228,12 @@
       el("btnConfirmSend").onclick = () => {
         const t = el("previewText").innerText;
         if (navigator.share) {
-          navigator.share({ text: t }).then(() => el("previewModal").style.display = "none").catch(() => {});
+          navigator.share({ text: t })
+            .then(() => el("previewModal").style.display = "none")
+            .catch(() => {
+              window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
+              el("previewModal").style.display = "none";
+            });
         } else {
           window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
           el("previewModal").style.display = "none";
@@ -247,7 +252,8 @@
       };
 
       /* ── Lote: múltiplos eventos ── */
-      let batchRows = [{ data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' }];
+      function emptyBatchRow() { return { data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' }; }
+      let batchRows = [emptyBatchRow()];
 
       function renderBatch() {
         const wrap = el("batchWrap"); wrap.innerHTML = "";
@@ -270,7 +276,7 @@
       window.removeBatchRow = (idx) => { batchRows.splice(idx, 1); renderBatch(); };
 
       el("btnBatchAdd").onclick = () => {
-        batchRows.push({ data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' });
+        batchRows.push(emptyBatchRow());
         renderBatch();
       };
 
@@ -278,7 +284,7 @@
         const valid = batchRows.filter(r => r.titulo.trim() && r.data);
         if (!valid.length) return showToast("Preencha ao menos título e data!");
         valid.forEach(r => events.push({ titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc }));
-        batchRows = [{ data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' }];
+        batchRows = [emptyBatchRow()];
         renderBatch();
         save(); showToast(`${valid.length} evento(s) salvo(s)! ✅`);
       };
