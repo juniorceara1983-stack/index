@@ -173,15 +173,11 @@
       function getGCalLink(ev) {
         const d = ev.data.replace(/-/g, '');
         const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${h}&details=${encodeURIComponent(ev.desc || '')}`;
-      }
-
-      async function shortenUrl(url) {
-        try {
-          const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
-          if (res.ok) { const short = await res.text(); if (short.startsWith('http')) return short.trim(); }
-        } catch (e) { console.warn('URL shortening failed, using original link:', e); }
-        return url;
+        // compute end time = start + 1 hour
+        const startMinutes = ev.hora ? parseInt(ev.hora.split(':')[0]) * 60 + parseInt(ev.hora.split(':')[1]) : 9 * 60;
+        const endMinutes = startMinutes + 60;
+        const endH = String(Math.floor(endMinutes / 60) % 24).padStart(2, '0') + String(endMinutes % 60).padStart(2, '0') + '00';
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${endH}&details=${encodeURIComponent(ev.desc || '')}`;
       }
 
       function render() {
@@ -206,8 +202,7 @@
           let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
           for (const chk of selected) {
             const ev = events[chk.dataset.index];
-            const fullLink = getGCalLink(ev);
-            const shortLink = await shortenUrl(fullLink);
+            const shortLink = getGCalLink(ev);
             const [ano, mes, dia] = ev.data.split('-');
             txt += `🔔 *${ev.titulo}*\n`;
             txt += `📅 ${dia}/${mes}/${ano}`;
@@ -253,7 +248,7 @@
 
       /* ── Lote: múltiplos eventos ── */
       function emptyBatchRow() { return { data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' }; }
-      let batchRows = [emptyBatchRow()];
+      window.batchRows = [emptyBatchRow()];
 
       function renderBatch() {
         const wrap = el("batchWrap"); wrap.innerHTML = "";
@@ -262,35 +257,35 @@
           d.className = "batch-row";
           d.innerHTML = `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
-              <div class="field"><label>Título ${idx + 1}</label><input type="text" placeholder="Título" value="${row.titulo}" oninput="batchRows[${idx}].titulo=this.value"/></div>
-              <div class="field"><label>Data</label><input type="date" value="${row.data}" oninput="batchRows[${idx}].data=this.value"/></div>
-              <div class="field"><label>Hora</label><input type="time" value="${row.hora}" oninput="batchRows[${idx}].hora=this.value"/></div>
-              <div class="field"><label>Descrição</label><input type="text" placeholder="Opcional" value="${row.desc}" oninput="batchRows[${idx}].desc=this.value"/></div>
+              <div class="field"><label>Título ${idx + 1}</label><input type="text" placeholder="Título" value="${row.titulo}" oninput="window.batchRows[${idx}].titulo=this.value"/></div>
+              <div class="field"><label>Data</label><input type="date" value="${row.data}" oninput="window.batchRows[${idx}].data=this.value"/></div>
+              <div class="field"><label>Hora</label><input type="time" value="${row.hora}" oninput="window.batchRows[${idx}].hora=this.value"/></div>
+              <div class="field"><label>Descrição</label><input type="text" placeholder="Opcional" value="${row.desc}" oninput="window.batchRows[${idx}].desc=this.value"/></div>
             </div>
-            ${batchRows.length > 1 ? `<button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none;margin-bottom:8px" onclick="removeBatchRow(${idx})">✕ Remover</button>` : ''}
+            ${window.batchRows.length > 1 ? `<button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none;margin-bottom:8px" onclick="removeBatchRow(${idx})">✕ Remover</button>` : ''}
             <hr style="border-color:rgba(255,255,255,0.08);margin:4px 0 10px"/>`;
           wrap.appendChild(d);
         });
       }
 
-      window.removeBatchRow = (idx) => { batchRows.splice(idx, 1); renderBatch(); };
+      window.removeBatchRow = (idx) => { window.batchRows.splice(idx, 1); renderBatch(); };
 
       el("btnBatchAdd").onclick = () => {
-        batchRows.push(emptyBatchRow());
+        window.batchRows.push(emptyBatchRow());
         renderBatch();
       };
 
       el("btnBatchSave").onclick = () => {
-        const valid = batchRows.filter(r => r.titulo.trim() && r.data);
+        const valid = window.batchRows.filter(r => r.titulo.trim() && r.data);
         if (!valid.length) return showToast("Preencha ao menos título e data!");
         valid.forEach(r => events.push({ titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc }));
-        batchRows = [emptyBatchRow()];
+        window.batchRows = [emptyBatchRow()];
         renderBatch();
         save(); showToast(`${valid.length} evento(s) salvo(s)! ✅`);
       };
 
       el("btnBatchSendWap").onclick = async () => {
-        const valid = batchRows.filter(r => r.titulo.trim() && r.data);
+        const valid = window.batchRows.filter(r => r.titulo.trim() && r.data);
         if (!valid.length) return showToast("Preencha ao menos título e data!");
         el("btnBatchSendWap").disabled = true;
         el("btnBatchSendWap").innerText = "⏳ Preparando...";
@@ -300,7 +295,7 @@
           let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
           for (const r of valid) {
             const ev = { titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc };
-            const shortLink = await shortenUrl(getGCalLink(ev));
+            const shortLink = getGCalLink(ev);
             const [ano, mes, dia] = r.data.split('-');
             txt += `🔔 *${ev.titulo}*\n`;
             txt += `📅 ${dia}/${mes}/${ano}`;
