@@ -50,6 +50,7 @@
     .has-event { background: var(--gold); color: var(--bg); font-weight: bold; }
     
     .event-item { background: rgba(15,23,42,0.4); border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 4px solid var(--gold); }
+    .batch-row { background: rgba(255,255,255,0.02); border-radius: 10px; padding: 8px; }
     .event-header { display: flex; align-items: flex-start; gap: 10px; }
     .event-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
     .btn-mini { font-size: 0.7rem; padding: 4px 8px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid #3b82f6; }
@@ -94,12 +95,22 @@
     </div>
   </div>
 
-  <div id="previewModal">
+  <div class="panel">
+    <h2>📋 Criar Vários Eventos</h2>
+    <div id="batchWrap"></div>
+    <div class="btns" style="margin-top:10px;">
+      <button class="btn-secondary" id="btnBatchAdd">+ Adicionar Data</button>
+      <button class="btn-primary" id="btnBatchSave" style="flex:2">💾 Salvar Todos</button>
+      <button class="btn-share" id="btnBatchSendWap" style="flex:2">📲 Enviar Lote no Zap</button>
+    </div>
+  </div>
+
+  <div id="previewModal"> 
     <div class="modal-content">
       <h3 style="color:var(--gold); margin-top:0;">Resumo da Agenda</h3>
       <div id="previewText" style="white-space: pre-wrap; background:#0f172a; padding:12px; border-radius:10px; font-size:0.9rem; margin-bottom:15px; border: 1px solid rgba(255,255,255,0.1); max-height: 250px; overflow-y: auto;"></div>
       <div class="btns">
-        <button class="btn-share" id="btnConfirmSend">Enviar Agora</button>
+        <button class="btn-share" id="btnConfirmSend">📲 Enviar no WhatsApp</button>
         <button class="btn-secondary" id="btnCloseModal">Voltar</button>
       </div>
     </div>
@@ -112,6 +123,32 @@
       let events = JSON.parse(localStorage.getItem('agenda_v4')) || [];
       let currentCalDate = new Date();
       const el = (id) => document.getElementById(id);
+
+      /* ── Frases bíblicas e de santos ── */
+      const frases = [
+        '🙏 "Tudo posso naquele que me fortalece." — Fp 4:13',
+        '✝️ "O Senhor é meu pastor e nada me faltará." — Sl 23:1',
+        '🕊️ "Buscai primeiro o Reino de Deus e a sua justiça." — Mt 6:33',
+        '💫 "Confiai no Senhor de todo o coração." — Pv 3:5',
+        '⭐ "O amor é paciente, o amor é bondoso." — 1 Co 13:4',
+        '🕯️ "A tua palavra é lâmpada para meus pés." — Sl 119:105',
+        '🌿 "Lançai sobre ele toda a vossa ansiedade, porque ele tem cuidado de vós." — 1 Pe 5:7',
+        '🌸 "A fé é a certeza daquilo que esperamos." — Hb 11:1',
+        '🌟 "Pedi e recebereis, buscai e encontrareis." — Mt 7:7',
+        '🌺 "Porque Deus amou o mundo de tal maneira que deu o seu Filho." — Jo 3:16',
+        '🌹 "Deixa Deus agir e ele fará tudo por ti." — Santa Teresa de Ávila',
+        '☀️ "Começa fazendo o necessário, depois o possível, e de repente estarás fazendo o impossível." — São Francisco de Assis',
+        '🕊️ "A paz começa com um sorriso." — Santa Teresa de Calcutá',
+        '⚓ "Deus nunca nos dá uma cruz que não possamos carregar." — Santo Agostinho',
+        '🌷 "A oração é o oxigênio da alma." — São Padre Pio',
+        '💛 "Trabalha como se tudo dependesse de ti, ora como se tudo dependesse de Deus." — Santo Inácio de Loyola',
+        '🌠 "Sede sábios como as serpentes e simples como as pombas." — Mt 10:16',
+        '🔥 "Não vim trazer paz, mas a espada da verdade que liberta." — São João da Cruz',
+        '🌙 "Tudo tem o seu tempo determinado, há tempo para todo propósito debaixo do céu." — Ecl 3:1',
+        '💎 "O Senhor te abençoe e te guarde. O Senhor faça brilhar o seu rosto sobre ti." — Nm 6:24-25'
+      ];
+
+      function getRandomFrase() { return frases[Math.floor(Math.random() * frases.length)]; }
 
       function showToast(m) { el("toast").innerText = m; el("toast").style.display = "block"; setTimeout(() => el("toast").style.display = "none", 3000); }
 
@@ -136,7 +173,15 @@
       function getGCalLink(ev) {
         const d = ev.data.replace(/-/g, '');
         const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${h}&details=${encodeURIComponent(ev.desc)}`;
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${h}&details=${encodeURIComponent(ev.desc || '')}`;
+      }
+
+      async function shortenUrl(url) {
+        try {
+          const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
+          if (res.ok) { const short = await res.text(); if (short.startsWith('http')) return short.trim(); }
+        } catch (e) {}
+        return url;
       }
 
       function render() {
@@ -144,41 +189,131 @@
         el("btnPreview").disabled = events.length === 0;
         events.forEach((ev, i) => {
           const div = document.createElement("div"); div.className = "event-item";
-          div.innerHTML = `<div class="event-header"><input type="checkbox" class="send-check" data-index="${i}" checked style="width:20px;height:20px;"><div style="flex:1"><strong>${ev.titulo}</strong><br><small>${ev.data} às ${ev.hora || '--:--'}</small></div></div>
-            <div class="event-actions"><button class="btn-mini" onclick="window.open('${getGCalLink(ev)}', '_blank')">Google</button><button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none" onclick="removeEv(${i})">Excluir</button></div>`;
+          div.innerHTML = `<div class="event-header"><input type="checkbox" class="send-check" data-index="${i}" checked style="width:20px;height:20px;"><div style="flex:1"><strong>${ev.titulo}</strong><br><small>${ev.data} às ${ev.hora || '--:--'}</small>${ev.desc ? `<br><small style="color:var(--muted)">${ev.desc}</small>` : ''}</div></div>
+            <div class="event-actions"><button class="btn-mini" onclick="window.open('${getGCalLink(ev)}', '_blank')">📅 Google</button><button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none" onclick="removeEv(${i})">Excluir</button></div>`;
           listEl.appendChild(div);
         });
       }
 
-      el("btnPreview").onclick = () => {
+      el("btnPreview").onclick = async () => {
         const selected = document.querySelectorAll(".send-check:checked");
-        if(!selected.length) return alert("Selecione algo!");
-        let txt = "*📅 RESUMO DA AGENDA:*\n\n";
-        selected.forEach(chk => {
-          const ev = events[chk.dataset.index];
-          const gLink = getGCalLink(ev); // Agora usamos o link direto do Google
-          txt += `✅ *${ev.titulo}*\n⏰ ${ev.data} às ${ev.hora}\n🔗 Salvar na Agenda: ${gLink}\n\n`;
-        });
-        el("previewText").innerText = txt; el("previewModal").style.display = "flex";
+        if (!selected.length) return alert("Selecione pelo menos um evento!");
+        el("btnPreview").disabled = true;
+        el("btnPreview").innerText = "⏳ Preparando...";
+        try {
+          const frase = getRandomFrase();
+          const dataHoje = new Date().toLocaleDateString('pt-BR');
+          let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
+          for (const chk of selected) {
+            const ev = events[chk.dataset.index];
+            const fullLink = getGCalLink(ev);
+            const shortLink = await shortenUrl(fullLink);
+            const [ano, mes, dia] = ev.data.split('-');
+            txt += `🔔 *${ev.titulo}*\n`;
+            txt += `📅 ${dia}/${mes}/${ano}`;
+            txt += ev.hora ? ` às ${ev.hora}` : '';
+            txt += `\n`;
+            if (ev.desc) txt += `📝 ${ev.desc}\n`;
+            txt += `🗓️ Salvar: ${shortLink}\n\n`;
+          }
+          txt += `───────────────\n${frase}`;
+          el("previewText").innerText = txt;
+          el("previewModal").style.display = "flex";
+        } finally {
+          el("btnPreview").disabled = false;
+          el("btnPreview").innerText = "Visualizar e Enviar Zap";
+        }
       };
 
       el("btnConfirmSend").onclick = () => {
         const t = el("previewText").innerText;
-        if(navigator.share) navigator.share({ text: t }).then(()=>el("previewModal").style.display="none");
-        else { navigator.clipboard.writeText(t); showToast("Copiado!"); el("previewModal").style.display="none"; }
+        if (navigator.share) {
+          navigator.share({ text: t }).then(() => el("previewModal").style.display = "none").catch(() => {});
+        } else {
+          window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
+          el("previewModal").style.display = "none";
+        }
       };
 
       el("btnCloseModal").onclick = () => el("previewModal").style.display = "none";
-      window.removeEv = (i) => { if(confirm("Remover?")) { events.splice(i, 1); save(); } };
-      
+      window.removeEv = (i) => { if (confirm("Remover este evento?")) { events.splice(i, 1); save(); } };
+
+      /* ── Adicionar evento único ── */
       el("btnAdd").onclick = () => {
-        if(!el("titulo").value || !el("data").value) return showToast("Título e Data!");
+        if (!el("titulo").value || !el("data").value) return showToast("Informe Título e Data!");
         events.push({ titulo: el("titulo").value, data: el("data").value, hora: el("hora").value, desc: el("desc").value });
-        el("titulo").value = ""; el("desc").value = ""; save();
+        el("titulo").value = ""; el("desc").value = "";
+        save(); showToast("Evento salvo! ✅");
       };
 
-      el("btnClear").onclick = () => { if(confirm("Limpar tudo?")) { events = []; save(); } };
+      /* ── Lote: múltiplos eventos ── */
+      let batchRows = [{ data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' }];
+
+      function renderBatch() {
+        const wrap = el("batchWrap"); wrap.innerHTML = "";
+        batchRows.forEach((row, idx) => {
+          const d = document.createElement("div");
+          d.className = "batch-row";
+          d.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
+              <div class="field"><label>Título ${idx + 1}</label><input type="text" placeholder="Título" value="${row.titulo}" oninput="batchRows[${idx}].titulo=this.value"/></div>
+              <div class="field"><label>Data</label><input type="date" value="${row.data}" oninput="batchRows[${idx}].data=this.value"/></div>
+              <div class="field"><label>Hora</label><input type="time" value="${row.hora}" oninput="batchRows[${idx}].hora=this.value"/></div>
+              <div class="field"><label>Descrição</label><input type="text" placeholder="Opcional" value="${row.desc}" oninput="batchRows[${idx}].desc=this.value"/></div>
+            </div>
+            ${batchRows.length > 1 ? `<button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none;margin-bottom:8px" onclick="removeBatchRow(${idx})">✕ Remover</button>` : ''}
+            <hr style="border-color:rgba(255,255,255,0.08);margin:4px 0 10px"/>`;
+          wrap.appendChild(d);
+        });
+      }
+
+      window.removeBatchRow = (idx) => { batchRows.splice(idx, 1); renderBatch(); };
+
+      el("btnBatchAdd").onclick = () => {
+        batchRows.push({ data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' });
+        renderBatch();
+      };
+
+      el("btnBatchSave").onclick = () => {
+        const valid = batchRows.filter(r => r.titulo.trim() && r.data);
+        if (!valid.length) return showToast("Preencha ao menos título e data!");
+        valid.forEach(r => events.push({ titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc }));
+        batchRows = [{ data: new Date().toISOString().split('T')[0], hora: '', titulo: '', desc: '' }];
+        renderBatch();
+        save(); showToast(`${valid.length} evento(s) salvo(s)! ✅`);
+      };
+
+      el("btnBatchSendWap").onclick = async () => {
+        const valid = batchRows.filter(r => r.titulo.trim() && r.data);
+        if (!valid.length) return showToast("Preencha ao menos título e data!");
+        el("btnBatchSendWap").disabled = true;
+        el("btnBatchSendWap").innerText = "⏳ Preparando...";
+        try {
+          const frase = getRandomFrase();
+          const dataHoje = new Date().toLocaleDateString('pt-BR');
+          let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
+          for (const r of valid) {
+            const ev = { titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc };
+            const shortLink = await shortenUrl(getGCalLink(ev));
+            const [ano, mes, dia] = r.data.split('-');
+            txt += `🔔 *${ev.titulo}*\n`;
+            txt += `📅 ${dia}/${mes}/${ano}`;
+            txt += r.hora ? ` às ${r.hora}` : '';
+            txt += `\n`;
+            if (r.desc) txt += `📝 ${r.desc}\n`;
+            txt += `🗓️ Salvar: ${shortLink}\n\n`;
+          }
+          txt += `───────────────\n${frase}`;
+          window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
+        } finally {
+          el("btnBatchSendWap").disabled = false;
+          el("btnBatchSendWap").innerText = "📲 Enviar Lote no Zap";
+        }
+      };
+
+      el("btnClear").onclick = () => { if (confirm("Limpar todos os eventos?")) { events = []; save(); } };
       el("data").value = new Date().toISOString().split('T')[0];
+      renderBatch();
       save();
     })();
   </script>
