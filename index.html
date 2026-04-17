@@ -152,6 +152,39 @@
 
       function showToast(m) { el("toast").innerText = m; el("toast").style.display = "block"; setTimeout(() => el("toast").style.display = "none", 3000); }
       function normalizeTitle(title) { return String(title || "").trim(); }
+      function formatDateOnly(d) {
+        return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      }
+      function formatDateTime(d) {
+        return `${formatDateOnly(d)}T${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}00`;
+      }
+      function getGoogleCalendarLink(ev) {
+        if (!ev?.data) return "";
+        const [ano, mes, dia] = ev.data.split('-').map(Number);
+        if (!ano || !mes || !dia) return "";
+        const titulo = normalizeTitle(ev.titulo) || "Evento";
+        const hasHora = !!ev.hora;
+        let start;
+        let end;
+        if (hasHora) {
+          const [h, m] = (ev.hora || "00:00").split(':').map(Number);
+          start = new Date(ano, mes - 1, dia, h || 0, m || 0, 0);
+          end = new Date(start.getTime() + 60 * 60 * 1000);
+        } else {
+          start = new Date(ano, mes - 1, dia);
+          end = new Date(ano, mes - 1, dia + 1);
+        }
+        const dates = hasHora
+          ? `${formatDateTime(start)}/${formatDateTime(end)}`
+          : `${formatDateOnly(start)}/${formatDateOnly(end)}`;
+        const params = new URLSearchParams({
+          action: 'TEMPLATE',
+          text: titulo,
+          dates
+        });
+        if (ev.desc) params.set('details', ev.desc);
+        return `https://calendar.google.com/calendar/render?${params.toString()}`;
+      }
 
       function save() { localStorage.setItem('agenda_v4', JSON.stringify(events)); render(); renderCalendar(); }
 
@@ -189,11 +222,11 @@
         el("btnPreview").disabled = true;
         el("btnPreview").innerText = "⏳ Preparando...";
         try {
+          const selectedEvents = [...selected].map(chk => events[chk.dataset.index]);
           const frase = getRandomFrase();
           const dataHoje = new Date().toLocaleDateString('pt-BR');
           let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
-          for (const chk of selected) {
-            const ev = events[chk.dataset.index];
+          for (const ev of selectedEvents) {
             const [ano, mes, dia] = ev.data.split('-');
             txt += `🔔 *${normalizeTitle(ev.titulo)}*\n`;
             txt += `📅 ${dia}/${mes}/${ano}`;
@@ -201,6 +234,10 @@
             txt += `\n`;
             if (ev.desc) txt += `📝 ${ev.desc}\n`;
             txt += `\n`;
+          }
+          if (selectedEvents.length === 1) {
+            const googleCalendarLink = getGoogleCalendarLink(selectedEvents[0]);
+            if (googleCalendarLink) txt += `📎 Google Agenda: ${googleCalendarLink}\n\n`;
           }
           txt += `───────────────\n${frase}`;
           el("previewText").innerText = txt;
@@ -282,18 +319,22 @@
         el("btnBatchSendWap").disabled = true;
         el("btnBatchSendWap").innerText = "⏳ Preparando...";
         try {
+          const validEvents = valid.map(r => ({ titulo: normalizeTitle(r.titulo), data: r.data, hora: r.hora, desc: r.desc }));
           const frase = getRandomFrase();
           const dataHoje = new Date().toLocaleDateString('pt-BR');
           let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
-          for (const r of valid) {
-            const ev = { titulo: normalizeTitle(r.titulo), data: r.data, hora: r.hora, desc: r.desc };
-            const [ano, mes, dia] = r.data.split('-');
+          for (const ev of validEvents) {
+            const [ano, mes, dia] = ev.data.split('-');
             txt += `🔔 *${ev.titulo}*\n`;
             txt += `📅 ${dia}/${mes}/${ano}`;
-            txt += r.hora ? ` às ${r.hora}` : '';
+            txt += ev.hora ? ` às ${ev.hora}` : '';
             txt += `\n`;
-            if (r.desc) txt += `📝 ${r.desc}\n`;
+            if (ev.desc) txt += `📝 ${ev.desc}\n`;
             txt += `\n`;
+          }
+          if (validEvents.length === 1) {
+            const googleCalendarLink = getGoogleCalendarLink(validEvents[0]);
+            if (googleCalendarLink) txt += `📎 Google Agenda: ${googleCalendarLink}\n\n`;
           }
           txt += `───────────────\n${frase}`;
           window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
