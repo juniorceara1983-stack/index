@@ -151,6 +151,7 @@
       function getRandomFrase() { return frases[Math.floor(Math.random() * frases.length)]; }
 
       function showToast(m) { el("toast").innerText = m; el("toast").style.display = "block"; setTimeout(() => el("toast").style.display = "none", 3000); }
+      function normalizeTitle(title) { return String(title || "").trim(); }
 
       function save() { localStorage.setItem('agenda_v4', JSON.stringify(events)); render(); renderCalendar(); }
 
@@ -170,23 +171,14 @@
         }
       }
 
-      function getGCalLink(ev) {
-        const d = ev.data.replace(/-/g, '');
-        const h = ev.hora ? ev.hora.replace(':', '') + '00' : '090000';
-        // compute end time = start + 1 hour
-        const startMinutes = ev.hora ? parseInt(ev.hora.split(':')[0]) * 60 + parseInt(ev.hora.split(':')[1]) : 9 * 60;
-        const endMinutes = startMinutes + 60;
-        const endH = String(Math.floor(endMinutes / 60) % 24).padStart(2, '0') + String(endMinutes % 60).padStart(2, '0') + '00';
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.titulo)}&dates=${d}T${h}/${d}T${endH}&details=${encodeURIComponent(ev.desc || '')}`;
-      }
-
       function render() {
         const listEl = el("lista"); listEl.innerHTML = events.length ? "" : "<p style='color:var(--muted); text-align:center'>Lista vazia.</p>";
         el("btnPreview").disabled = events.length === 0;
         events.forEach((ev, i) => {
+          const title = normalizeTitle(ev.titulo);
           const div = document.createElement("div"); div.className = "event-item";
-          div.innerHTML = `<div class="event-header"><input type="checkbox" class="send-check" data-index="${i}" checked style="width:20px;height:20px;"><div style="flex:1"><strong>${ev.titulo}</strong><br><small>${ev.data} às ${ev.hora || '--:--'}</small>${ev.desc ? `<br><small style="color:var(--muted)">${ev.desc}</small>` : ''}</div></div>
-            <div class="event-actions"><button class="btn-mini" onclick="window.open('${getGCalLink(ev)}', '_blank')">📅 Google</button><button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none" onclick="removeEv(${i})">Excluir</button></div>`;
+          div.innerHTML = `<div class="event-header"><input type="checkbox" class="send-check" data-index="${i}" checked style="width:20px;height:20px;"><div style="flex:1"><strong>${title}</strong><br><small>${ev.data} às ${ev.hora || '--:--'}</small>${ev.desc ? `<br><small style="color:var(--muted)">${ev.desc}</small>` : ''}</div></div>
+            <div class="event-actions"><button class="btn-mini" style="border-color:#fca5a5;color:#fca5a5;background:none" onclick="removeEv(${i})">Excluir</button></div>`;
           listEl.appendChild(div);
         });
       }
@@ -202,14 +194,13 @@
           let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
           for (const chk of selected) {
             const ev = events[chk.dataset.index];
-            const shortLink = getGCalLink(ev);
             const [ano, mes, dia] = ev.data.split('-');
-            txt += `🔔 *${ev.titulo}*\n`;
+            txt += `🔔 *${normalizeTitle(ev.titulo)}*\n`;
             txt += `📅 ${dia}/${mes}/${ano}`;
             txt += ev.hora ? ` às ${ev.hora}` : '';
             txt += `\n`;
             if (ev.desc) txt += `📝 ${ev.desc}\n`;
-            txt += `🗓️ Salvar: ${shortLink}\n\n`;
+            txt += `\n`;
           }
           txt += `───────────────\n${frase}`;
           el("previewText").innerText = txt;
@@ -240,8 +231,9 @@
 
       /* ── Adicionar evento único ── */
       el("btnAdd").onclick = () => {
-        if (!el("titulo").value || !el("data").value) return showToast("Informe Título e Data!");
-        events.push({ titulo: el("titulo").value, data: el("data").value, hora: el("hora").value, desc: el("desc").value });
+        const titulo = normalizeTitle(el("titulo").value);
+        if (!titulo || !el("data").value) return showToast("Informe Título e Data!");
+        events.push({ titulo, data: el("data").value, hora: el("hora").value, desc: el("desc").value });
         el("titulo").value = ""; el("desc").value = "";
         save(); showToast("Evento salvo! ✅");
       };
@@ -278,7 +270,7 @@
       el("btnBatchSave").onclick = () => {
         const valid = window.batchRows.filter(r => r.titulo.trim() && r.data);
         if (!valid.length) return showToast("Preencha ao menos título e data!");
-        valid.forEach(r => events.push({ titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc }));
+        valid.forEach(r => events.push({ titulo: normalizeTitle(r.titulo), data: r.data, hora: r.hora, desc: r.desc }));
         window.batchRows = [emptyBatchRow()];
         renderBatch();
         save(); showToast(`${valid.length} evento(s) salvo(s)! ✅`);
@@ -294,15 +286,14 @@
           const dataHoje = new Date().toLocaleDateString('pt-BR');
           let txt = `✨ *AGENDA DE COMPROMISSOS* ✨\n📆 Gerada em: ${dataHoje}\n\n`;
           for (const r of valid) {
-            const ev = { titulo: r.titulo.trim(), data: r.data, hora: r.hora, desc: r.desc };
-            const shortLink = getGCalLink(ev);
+            const ev = { titulo: normalizeTitle(r.titulo), data: r.data, hora: r.hora, desc: r.desc };
             const [ano, mes, dia] = r.data.split('-');
             txt += `🔔 *${ev.titulo}*\n`;
             txt += `📅 ${dia}/${mes}/${ano}`;
             txt += r.hora ? ` às ${r.hora}` : '';
             txt += `\n`;
             if (r.desc) txt += `📝 ${r.desc}\n`;
-            txt += `🗓️ Salvar: ${shortLink}\n\n`;
+            txt += `\n`;
           }
           txt += `───────────────\n${frase}`;
           window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
