@@ -342,10 +342,11 @@
 
   // Reseta o último elemento ao levantar o dedo / soltar o mouse,
   // para que o próximo toque no mesmo elemento seja relido.
+  // IMPORTANTE: não cancela o debounceTimer aqui, pois o touchend chega antes
+  // dos 250 ms expirarem tanto num toque rápido (tap) quanto num deslize —
+  // cancelar o timer impedia que qualquer fala fosse produzida.
   document.addEventListener('touchend', function () {
     lastSpokenElement = null;
-    clearTimeout(debounceTimer);
-    removeOutline();
   });
 
   document.addEventListener('mouseup', function () {
