@@ -13,6 +13,8 @@
     navigator.serviceWorker.register('sw-eventos.js');
   }
 </script>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
 
@@ -69,20 +71,20 @@
   <h1>Minha Agenda</h1>
 
   <div class="panel">
-    <div class="field"><label>Título</label><input type="text" id="titulo" placeholder="Ex: Farm Boss" /></div>
+    <div class="field"><label>Título</label><input type="text" id="titulo" placeholder="Ex: Farm Boss" aria-label="Título do evento" /></div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div class="field"><label>Data</label><input type="date" id="data" /></div>
-      <div class="field"><label>Hora</label><input type="time" id="hora" /></div>
+      <div class="field"><label>Data</label><input type="date" id="data" aria-label="Data do evento" /></div>
+      <div class="field"><label>Hora</label><input type="time" id="hora" aria-label="Hora do evento" /></div>
     </div>
-    <div class="field"><label>Descrição</label><textarea id="desc" rows="2" placeholder="Detalhes..."></textarea></div>
-    <button class="btn-primary" id="btnAdd">Salvar Evento</button>
+    <div class="field"><label>Descrição</label><textarea id="desc" rows="2" placeholder="Detalhes..." aria-label="Descrição do evento"></textarea></div>
+    <button class="btn-primary" id="btnAdd" aria-label="Salvar evento">Salvar Evento</button>
   </div>
 
   <div class="panel">
     <div class="cal-nav">
-      <button class="btn-secondary" onclick="changeMonth(-1)">❮</button>
-      <div id="calMonth" style="font-weight: bold; color: var(--gold)"></div>
-      <button class="btn-secondary" onclick="changeMonth(1)">❯</button>
+      <button class="btn-secondary" onclick="changeMonth(-1)" aria-label="Mês anterior">❮</button>
+      <div id="calMonth" style="font-weight: bold; color: var(--gold)" role="heading" aria-live="polite"></div>
+      <button class="btn-secondary" onclick="changeMonth(1)" aria-label="Próximo mês">❯</button>
     </div>
     <div class="cal-grid" id="calGrid"></div>
   </div>
@@ -91,8 +93,8 @@
     <h2>Próximos Eventos</h2>
     <div id="lista"></div>
     <div class="btns" style="margin-top:15px;">
-      <button class="btn-share" id="btnPreview" disabled>Visualizar e Enviar Zap</button>
-      <button class="btn-secondary" id="btnClear">Limpar Tudo</button>
+      <button class="btn-share" id="btnPreview" disabled aria-label="Visualizar resumo e enviar no WhatsApp">Visualizar e Enviar Zap</button>
+      <button class="btn-secondary" id="btnClear" aria-label="Limpar todos os eventos">Limpar Tudo</button>
     </div>
   </div>
 
@@ -100,10 +102,42 @@
     <h2>📋 Criar Vários Eventos</h2>
     <div id="batchWrap"></div>
     <div class="btns" style="margin-top:10px;">
-      <button class="btn-secondary" id="btnBatchAdd">+ Adicionar Data</button>
-      <button class="btn-primary" id="btnBatchSave" style="flex:2">💾 Salvar Todos</button>
-      <button class="btn-share" id="btnBatchSendWap" style="flex:2">📲 Enviar Lote no Zap</button>
+      <button class="btn-secondary" id="btnBatchAdd" aria-label="Adicionar nova data ao lote">+ Adicionar Data</button>
+      <button class="btn-primary" id="btnBatchSave" style="flex:2" aria-label="Salvar todos os eventos do lote">💾 Salvar Todos</button>
+      <button class="btn-share" id="btnBatchSendWap" style="flex:2" aria-label="Enviar lote de eventos no WhatsApp">📲 Enviar Lote no Zap</button>
     </div>
+  </div>
+
+  <div class="panel" style="max-width:550px; margin: 0 auto 1rem;">
+    <h2>📅 Calendário Interativo</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+      <div class="field">
+        <label>Título</label>
+        <input type="text" id="title" placeholder="Título do evento" aria-label="Título do evento no calendário" />
+      </div>
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="date" aria-label="Data do evento no calendário" />
+      </div>
+      <div class="field">
+        <label>Início</label>
+        <input type="time" id="start" aria-label="Hora de início do evento" />
+      </div>
+      <div class="field">
+        <label>Término</label>
+        <input type="time" id="end" aria-label="Hora de término do evento" />
+      </div>
+      <div class="field">
+        <label>Local</label>
+        <input type="text" id="location" placeholder="Local do evento" aria-label="Local do evento" />
+      </div>
+      <div class="field">
+        <label>Notas</label>
+        <textarea id="notes" rows="2" placeholder="Notas..." aria-label="Notas do evento" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.5);color:var(--cream);font-family:inherit;"></textarea>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addEvent()" aria-label="Adicionar evento ao calendário interativo">➕ Adicionar ao Calendário</button>
+    <div id="calendar" style="margin-top:1rem; border-radius:10px; overflow:hidden;"></div>
   </div>
 
   <div id="previewModal"> 
@@ -111,8 +145,8 @@
       <h3 style="color:var(--gold); margin-top:0;">Resumo da Agenda</h3>
       <div id="previewText" style="white-space: pre-wrap; background:#0f172a; padding:12px; border-radius:10px; font-size:0.9rem; margin-bottom:15px; border: 1px solid rgba(255,255,255,0.1); max-height: 250px; overflow-y: auto;"></div>
       <div class="btns">
-        <button class="btn-share" id="btnConfirmSend">📲 Enviar no WhatsApp</button>
-        <button class="btn-secondary" id="btnCloseModal">Voltar</button>
+        <button class="btn-share" id="btnConfirmSend" aria-label="Confirmar envio no WhatsApp">📲 Enviar no WhatsApp</button>
+        <button class="btn-secondary" id="btnCloseModal" aria-label="Fechar e voltar">Voltar</button>
       </div>
     </div>
   </div>
@@ -356,5 +390,7 @@
       save();
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="App.js"></script>
 </body>
 </html>

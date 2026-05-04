@@ -1,7 +1,10 @@
-const CACHE_NAME = 'cache-eventos-v1';
+const CACHE_NAME = 'cache-eventos-v2';
 const assets = [
   './index.html',
-  './manifest-eventos.json'
+  './manifest-eventos.json',
+  './style.css',
+  './App.js',
+  './sistemaOuvir.js'
 ];
 
 self.addEventListener('install', (e) => {
