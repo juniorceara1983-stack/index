@@ -11,7 +11,7 @@
   'use strict';
 
   // ─── Configurações ────────────────────────────────────────────────────────
-  var DEBOUNCE_DELAY = 100;   // ms que o dedo precisa ficar parado antes de ler
+  var DEBOUNCE_DELAY = 250;   // ms que o dedo precisa ficar parado antes de ler
   var OUTLINE_DURATION = 1500; // ms que o destaque visual fica visível
   var OUTLINE_STYLE = '3px solid #FF6600';
   var LANG = navigator.language || 'pt-BR'; // idioma da voz
@@ -297,10 +297,38 @@
     }, DEBOUNCE_DELAY);
   }
 
+  // ─── Desbloqueio do Speech API no mobile ──────────────────────────────────
+
+  /**
+   * Browsers mobile bloqueiam speechSynthesis até que haja um gesto explícito
+   * do usuário (touchstart ou click). Esta função dispara uma utterance silenciosa
+   * para desbloquear o contexto de áudio na primeira interação e remove os
+   * listeners depois de executada uma vez.
+   */
+  function unlockSpeech() {
+    if (!window.speechSynthesis) return;
+    var silent = new SpeechSynthesisUtterance('');
+    silent.volume = 0;
+    window.speechSynthesis.speak(silent);
+    document.removeEventListener('touchstart', unlockSpeech, true);
+    document.removeEventListener('click', unlockSpeech, true);
+  }
+
+  document.addEventListener('touchstart', unlockSpeech, true);
+  document.addEventListener('click', unlockSpeech, true);
+
   // ─── Eventos ──────────────────────────────────────────────────────────────
 
   // Touch (mobile)
   document.addEventListener('touchmove', function (event) {
+    var touch = event.touches[0];
+    if (touch) {
+      handlePointerMove(touch.clientX, touch.clientY);
+    }
+  }, { passive: true });
+
+  // Leitura imediata ao tocar (sem deslizar)
+  document.addEventListener('touchstart', function (event) {
     var touch = event.touches[0];
     if (touch) {
       handlePointerMove(touch.clientX, touch.clientY);
