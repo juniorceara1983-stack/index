@@ -301,25 +301,24 @@
 
   /**
    * Browsers mobile bloqueiam speechSynthesis até que haja um gesto explícito
-   * do usuário (touchstart ou click). Esta função dispara uma utterance silenciosa
-   * para desbloquear o contexto de áudio na primeira interação e remove os
-   * listeners depois de executada uma vez.
+   * do usuário. Esta flag garante que o desbloqueio ocorre apenas uma vez.
    */
-  function unlockSpeech() {
-    if (!window.speechSynthesis) return;
+  var audioUnlocked = false;
+
+  function ensureAudioUnlocked() {
+    if (audioUnlocked || !window.speechSynthesis) return;
+    audioUnlocked = true;
     var silent = new SpeechSynthesisUtterance('');
     silent.volume = 0;
     window.speechSynthesis.speak(silent);
-    document.removeEventListener('touchstart', unlockSpeech, true);
-    document.removeEventListener('click', unlockSpeech, true);
   }
 
-  document.addEventListener('touchstart', unlockSpeech, true);
-  document.addEventListener('click', unlockSpeech, true);
+  // Desbloqueia também em click (desktop e PWA sem toque)
+  document.addEventListener('click', ensureAudioUnlocked, { once: true });
 
   // ─── Eventos ──────────────────────────────────────────────────────────────
 
-  // Touch (mobile)
+  // Touch (mobile): leitura ao deslizar
   document.addEventListener('touchmove', function (event) {
     var touch = event.touches[0];
     if (touch) {
@@ -327,8 +326,9 @@
     }
   }, { passive: true });
 
-  // Leitura imediata ao tocar (sem deslizar)
+  // Touch (mobile): desbloqueio do áudio + leitura imediata ao tocar sem deslizar
   document.addEventListener('touchstart', function (event) {
+    ensureAudioUnlocked();
     var touch = event.touches[0];
     if (touch) {
       handlePointerMove(touch.clientX, touch.clientY);
